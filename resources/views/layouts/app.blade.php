@@ -34,7 +34,7 @@
                     <div class="flex">
                         <div class="shrink-0 flex items-center">
                             <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
-                                <img src="{{ asset('img/logo-golden.svg') }}" alt="Racksephnox" class="h-10 w-auto">
+                                <img src="{{ asset('img/logo.svg') }}" alt="Racksephnox" class="h-10 w-auto">
                                 <span class="text-xl font-bold golden-title hidden sm:inline">Racksephnox</span>
                             </a>
                         </div>
@@ -189,3 +189,4 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
+<link rel="icon" type="image/svg+xml" href="{{ asset("favicon.svg") }}">
