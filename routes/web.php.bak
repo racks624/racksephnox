@@ -1,0 +1,39 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\KycController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public welcome page
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// Dashboard and authenticated routes (require auth and email verification)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/investments', [InvestmentController::class, 'index'])->name('investments');
+    Route::post('/investments', [InvestmentController::class, 'store'])->name('investments.store');
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet');
+    Route::get('/kyc', [KycController::class, 'index'])->name('kyc');
+    Route::post('/kyc/upload', [KycController::class, 'upload'])->name('kyc.upload');
+});
+
+// Breeze profile routes (already authenticated)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Include Breeze authentication routes (login, register, etc.)
+require __DIR__.'/auth.php';

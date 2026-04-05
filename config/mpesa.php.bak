@@ -1,0 +1,70 @@
+<?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | M-Pesa Environment
+    |--------------------------------------------------------------------------
+    */
+    'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consumer Credentials
+    |--------------------------------------------------------------------------
+    */
+    'consumer_key'    => env('MPESA_CONSUMER_KEY'),
+    'consumer_secret' => env('MPESA_CONSUMER_SECRET'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Business Short Code
+    |--------------------------------------------------------------------------
+    */
+    'shortcode' => env('MPESA_SHORTCODE'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passkey (for STK Push)
+    |--------------------------------------------------------------------------
+    */
+    'passkey' => env('MPESA_PASSKEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initiator Name & Password (for B2C)
+    |--------------------------------------------------------------------------
+    */
+    'initiator_name'      => env('MPESA_INITIATOR_NAME'),
+    'initiator_password'  => env('MPESA_INITIATOR_PASSWORD'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | API URLs
+    |--------------------------------------------------------------------------
+    */
+    'urls' => [
+        'sandbox' => [
+            'oauth'       => 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+            'stk_push'    => 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+            'b2c'         => 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest',
+            'transaction_status' => 'https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query',
+        ],
+        'production' => [
+            'oauth'       => 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+            'stk_push'    => 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+            'b2c'         => 'https://api.safaricom.co.ke/mpesa/b2c/v1/paymentrequest',
+            'transaction_status' => 'https://api.safaricom.co.ke/mpesa/transactionstatus/v1/query',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Callback URLs (override if needed)
+    |--------------------------------------------------------------------------
+    */
+    'callback_url' => [
+        'stk'   => env('MPESA_STK_CALLBACK_URL', route('mpesa.callback', [], false)),
+        'b2c'   => env('MPESA_B2C_CALLBACK_URL', route('mpesa.b2c_callback', [], false)),
+    ],
+];

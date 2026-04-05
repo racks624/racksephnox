@@ -1,0 +1,150 @@
+@import './themes.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Toast Animations */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.fixed.bottom-4.right-4 > div {
+    animation: slideIn 0.3s ease-out;
+}
+/* Import Golden Spirit Theme */
+@import './golden-spirit.css';
+
+/* Additional Golden Theme Overrides */
+.bg-cosmic-void {
+    background: radial-gradient(ellipse at center, #080810 0%, #05050F 100%);
+}
+
+/* Golden Scrollbar */
+::-webkit-scrollbar-track {
+    background: #05050F;
+}
+::-webkit-scrollbar-thumb {
+    background: #D4AF37;
+    border-radius: 4px;
+}
+
+/* Golden Selection */
+::selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: #FFD700;
+}
+/* Perfect Alignment & Golden Spacing */
+.container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+@media (min-width: 640px) {
+    .container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+@media (min-width: 1024px) {
+    .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+/* Grid System with Golden Ratio */
+.grid {
+    gap: 1.5rem;
+}
+@media (min-width: 768px) {
+    .grid {
+        gap: 2rem;
+    }
+}
+
+/* Card Inner Spacing */
+.card-golden, .stat-card {
+    padding: 1.25rem;
+}
+@media (min-width: 768px) {
+    .card-golden, .stat-card {
+        padding: 1.5rem;
+    }
+}
+
+/* Table Alignment */
+table th, table td {
+    padding: 0.75rem 1rem;
+}
+@media (min-width: 768px) {
+    table th, table td {
+        padding: 1rem 1.5rem;
+    }
+}
+
+/* Button Alignment */
+.btn-golden {
+    padding: 0.625rem 1.25rem;
+}
+@media (min-width: 768px) {
+    .btn-golden {
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+/* Heading Margins */
+h1, h2, h3 {
+    margin-bottom: 0.75rem;
+}
+h1 {
+    margin-bottom: 1rem;
+}
+
+/* Section Spacing */
+section, .section {
+    margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+    section, .section {
+        margin-bottom: 2.5rem;
+    }
+}
+@import './cosmic-particles.css';
+/* Enhanced Widget Transitions */
+.card-golden, .stat-card {
+    transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    will-change: transform;
+}
+.card-golden:hover, .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -12px rgba(212, 175, 55, 0.3);
+}
+.btn-golden {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+.btn-golden::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s, height 0.5s;
+}
+.btn-golden:active::after {
+    width: 100%;
+    height: 100%;
+}
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.animate-pulse {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.05) 25%, rgba(212, 175, 55, 0.15) 50%, rgba(212, 175, 55, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}

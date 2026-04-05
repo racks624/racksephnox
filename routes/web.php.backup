@@ -1,0 +1,114 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\KycController;
+use App\Http\Controllers\MpesaController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\InvestmentPlanController;
+use App\Http\Controllers\Admin\KycController as AdminKycController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public landing page
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
+
+// Authenticated routes (require login)
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Investments
+    Route::get('/investments', [InvestmentController::class, 'index'])->name('investments');
+    Route::post('/investments', [InvestmentController::class, 'store'])->name('investments.store');
+
+    // Wallet
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet');
+
+    // Transactions
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/export', [TransactionController::class, 'exportCsv'])->name('transactions.export');
+
+    // KYC
+    Route::get('/kyc', [KycController::class, 'index'])->name('kyc');
+    Route::post('/kyc/upload', [KycController::class, 'upload'])->name('kyc.upload');
+
+    // M-Pesa
+    Route::prefix('mpesa')->name('mpesa.')->group(function () {
+        Route::get('/deposit', [MpesaController::class, 'showDepositForm'])->name('deposit');
+        Route::post('/deposit', [MpesaController::class, 'initiateDeposit'])->name('deposit.initiate');
+        Route::get('/withdraw', [MpesaController::class, 'showWithdrawalForm'])->name('withdraw');
+        Route::post('/withdraw', [MpesaController::class, 'initiateWithdrawal'])->name('withdraw.initiate');
+    });
+});
+
+// Profile routes (already authenticated)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Admin routes (require auth and admin role)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::resource('users', UserController::class);
+    Route::resource('plans', InvestmentPlanController::class);
+    Route::get('kyc', [AdminKycController::class, 'index'])->name('kyc.index');
+    Route::get('kyc/{document}', [AdminKycController::class, 'show'])->name('kyc.show');
+    Route::post('kyc/{document}/approve', [AdminKycController::class, 'approve'])->name('kyc.approve');
+    Route::post('kyc/{document}/reject', [AdminKycController::class, 'reject'])->name('kyc.reject');
+});
+
+// M-Pesa callback (public)
+Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpesa.callback');
+
+// Notifications
+Route::get('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+
+// Include Breeze authentication routes (login, register, password reset, etc.)
+require __DIR__.'/auth.php';
+
+// API Routes (directly in web.php with prefix)
+Route::prefix('api')->group(function () {
+    Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+    Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::post('/mpesa/callback', [App\Http\Controllers\Api\MpesaController::class, 'callback'])->name('api.mpesa.callback');
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user', [App\Http\Controllers\Api\AuthController::class, 'user']);
+        Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
+        Route::get('/investment-plans', [App\Http\Controllers\Api\InvestmentController::class, 'plans']);
+        Route::apiResource('investments', App\Http\Controllers\Api\InvestmentController::class)->only(['index', 'store', 'show']);
+        Route::get('/wallet', [App\Http\Controllers\Api\WalletController::class, 'index']);
+        Route::get('/transactions', [App\Http\Controllers\Api\WalletController::class, 'transactions']);
+        Route::post('/mpesa/stkpush', [App\Http\Controllers\Api\MpesaController::class, 'stkPush']);
+        Route::get('/mpesa/transactions/{id}', [App\Http\Controllers\Api\MpesaController::class, 'status']);
+        Route::get('/kyc/status', [App\Http\Controllers\Api\KycController::class, 'status']);
+        Route::post('/kyc/upload', [App\Http\Controllers\Api\KycController::class, 'upload']);
+        Route::post('/kyc/verify-id', [App\Http\Controllers\Api\KycController::class, 'verifyId']);
+    });
+});
+
+// Referral routes
+Route::get('/refer/{code}', [App\Http\Controllers\ReferralController::class, 'show'])->name('referral.show');
+Route::middleware('auth')->group(function () {
+    Route::get('/referrals', [App\Http\Controllers\ReferralController::class, 'index'])->name('referrals');
+});
+
+// Referral routes
+Route::get('/refer/{code}', [App\Http\Controllers\ReferralController::class, 'show'])->name('referral.show');
+Route::middleware('auth')->group(function () {
+    Route::get('/referrals', [App\Http\Controllers\ReferralController::class, 'index'])->name('referrals');
+});

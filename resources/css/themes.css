@@ -1,0 +1,94 @@
+/* ========================================
+   Racksephnox – Cosmic Color Palette
+   ======================================== */
+
+:root {
+    --primary-500: 99, 102, 241;
+    --primary-600: 79, 70, 229;
+    --primary-700: 67, 56, 202;
+
+    /* Gold Palette */
+    --gold-light: 255, 215, 0;    /* #FFD700 */
+    --gold: 212, 175, 55;          /* #D4AF37 */
+    --gold-dark: 184, 134, 11;     /* #B8860B */
+    --gold-deep: 139, 69, 19;      /* #8B4513 */
+    --amber: 255, 191, 0;          /* #FFBF00 */
+    --warm-yellow: 255, 223, 0;    /* #FFDF00 */
+
+    /* Cosmic Backgrounds */
+    --cosmic-black: 8, 8, 16;      /* #080810 */
+    --cosmic-deep: 5, 5, 15;       /* #05050F */
+    --cosmic-space: 10, 10, 25;    /* #0A0A19 */
+
+    /* Soft Light Accents */
+    --ivory: 255, 248, 225;        /* #FFF8E1 */
+    --cream: 255, 253, 245;        /* #FFFDF5 */
+    --white-glow: 255, 255, 245;   /* #FFFFF5 */
+
+    /* Text Colors */
+    --text-black: 8, 8, 16;
+    --text-ivory: 255, 248, 225;
+    --text-gold: 255, 215, 0;
+}
+
+/* Light theme (default) */
+:root {
+    --bg-primary: var(--cosmic-black);
+    --bg-secondary: var(--cosmic-deep);
+    --bg-tertiary: var(--cosmic-space);
+    --text-primary: var(--text-ivory);
+    --text-secondary: 156, 163, 175;
+    --accent: var(--gold);
+}
+
+/* Dark theme – already cosmic, but keep consistency */
+.dark {
+    --bg-primary: var(--cosmic-black);
+    --bg-secondary: var(--cosmic-deep);
+    --bg-tertiary: var(--cosmic-space);
+    --text-primary: var(--text-ivory);
+    --text-secondary: 156, 163, 175;
+    --accent: var(--gold);
+}
+
+/* Cosmic theme (same as dark, but with a more vibrant gold) */
+.cosmic {
+    --bg-primary: var(--cosmic-black);
+    --bg-secondary: var(--cosmic-deep);
+    --bg-tertiary: var(--cosmic-space);
+    --text-primary: var(--text-ivory);
+    --text-secondary: 200, 200, 220;
+    --accent: var(--gold-light);
+}
+
+/* Abundance theme (warm gold on light background) */
+.abundance {
+    --bg-primary: 255, 251, 235;
+    --bg-secondary: 254, 243, 199;
+    --bg-tertiary: 253, 230, 138;
+    --text-primary: 120, 53, 15;
+    --text-secondary: 180, 83, 9;
+    --accent: 245, 158, 11;
+}
+
+/* Golden theme (exclusive for premium feel) */
+.golden {
+    --bg-primary: 20, 15, 5;
+    --bg-secondary: 30, 22, 8;
+    --bg-tertiary: 40, 30, 12;
+    --text-primary: var(--text-ivory);
+    --text-secondary: 212, 175, 55;
+    --accent: var(--gold-light);
+}
+
+body {
+    background-color: rgb(var(--bg-primary));
+    color: rgb(var(--text-primary));
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.bg-theme-primary { background-color: rgb(var(--bg-primary)); }
+.bg-theme-secondary { background-color: rgb(var(--bg-secondary)); }
+.text-theme-primary { color: rgb(var(--text-primary)); }
+.text-theme-secondary { color: rgb(var(--text-secondary)); }
+.theme-accent { color: rgb(var(--accent)); }

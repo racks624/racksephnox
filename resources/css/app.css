@@ -1,0 +1,310 @@
+/* ========================================
+   Racksephnox – Divine Golden Spirit Theme
+   ======================================== */
+
+/* Import all external CSS files first */
+@import './themes.css';
+@import './golden-spirit.css';
+@import './cosmic-particles.css';
+
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+body {
+    background: linear-gradient(135deg, rgb(var(--cosmic-black)), rgb(var(--cosmic-deep)));
+    color: rgb(var(--text-ivory));
+    font-family: 'Figtree', 'Inter', system-ui, sans-serif;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Golden Spiral Overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'%3E%3Cpath fill='none' stroke='rgba(212,175,55,0.03)' stroke-width='2' d='M500,500 L500,500' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    z-index: -1;
+}
+
+/* Golden Gradient Backgrounds */
+.bg-gold-gradient {
+    background: linear-gradient(135deg, rgb(var(--gold-light)), rgb(var(--gold)), rgb(var(--gold-dark)));
+}
+.bg-cosmic-gold {
+    background: radial-gradient(circle at 30% 50%, rgba(var(--gold), 0.15), transparent 80%);
+}
+.bg-gold-spiral {
+    background: radial-gradient(circle at 30% 50%, rgba(var(--gold), 0.1), transparent 70%);
+}
+
+/* Card Styles - Golden Elegance */
+.card-golden {
+    background: rgba(var(--cosmic-space), 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(var(--gold), 0.3);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(var(--gold), 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-golden:hover {
+    border-color: rgba(var(--gold), 0.6);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--gold), 0.2);
+    transform: translateY(-4px);
+}
+
+/* Buttons - Golden Touch */
+.btn-golden {
+    background: linear-gradient(135deg, rgb(var(--gold)), rgb(var(--gold-dark)));
+    color: rgb(var(--text-black));
+    border: none;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.btn-golden::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+.btn-golden:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(var(--gold), 0.4);
+}
+.btn-golden:hover::before {
+    left: 100%;
+}
+
+/* Navigation - Golden Borders */
+.nav-golden {
+    background: rgba(var(--cosmic-space), 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(var(--gold), 0.3);
+}
+.nav-link-golden {
+    color: rgb(var(--text-ivory));
+    transition: color 0.3s ease;
+    position: relative;
+}
+.nav-link-golden::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: rgb(var(--gold));
+    transition: width 0.3s ease;
+}
+.nav-link-golden:hover::after,
+.nav-link-golden.active::after {
+    width: 100%;
+}
+.nav-link-golden:hover,
+.nav-link-golden.active {
+    color: rgb(var(--gold-light));
+}
+
+/* Headings - Sacred Text */
+h1, .golden-title {
+    background: linear-gradient(135deg, rgb(var(--gold-light)), rgb(var(--gold)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    position: relative;
+}
+.golden-spiral-text {
+    position: relative;
+    display: inline-block;
+}
+.golden-spiral-text::before {
+    content: '∞';
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgb(var(--gold));
+    font-size: 1.2em;
+    opacity: 0.6;
+}
+
+/* Stats Cards - Golden Accents */
+.stat-card {
+    background: rgba(var(--cosmic-space), 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(var(--gold), 0.2);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+.stat-card:hover {
+    border-color: rgba(var(--gold), 0.5);
+    transform: translateY(-4px);
+}
+.stat-value {
+    color: rgb(var(--gold-light));
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+/* Input Fields - Golden Glow */
+.input-golden {
+    background: rgba(var(--cosmic-deep), 0.8);
+    border: 1px solid rgba(var(--gold), 0.3);
+    border-radius: 12px;
+    color: rgb(var(--text-ivory));
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+.input-golden:focus {
+    border-color: rgb(var(--gold));
+    box-shadow: 0 0 20px rgba(var(--gold), 0.2);
+    outline: none;
+}
+
+/* Golden Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgb(var(--cosmic-deep));
+}
+::-webkit-scrollbar-thumb {
+    background: rgb(var(--gold));
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--gold-light));
+}
+
+/* Golden Animations */
+@keyframes goldenPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(var(--gold), 0.4);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(var(--gold), 0.6);
+    }
+}
+@keyframes spiralFloat {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-10px) rotate(3deg);
+    }
+}
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Spiral Animation Elements */
+.spiral-ornament {
+    position: relative;
+}
+.spiral-ornament::after {
+    content: '∞';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgb(var(--gold));
+    font-size: 1.5em;
+    opacity: 0.5;
+    animation: goldenPulse 2s infinite;
+}
+
+/* Sacred Phrase Styling */
+.sacred-phrase {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    color: rgb(var(--gold));
+    text-shadow: 0 0 10px rgba(var(--gold), 0.3);
+    letter-spacing: 1px;
+}
+.guardian-quote {
+    border-left: 3px solid rgb(var(--gold));
+    padding-left: 20px;
+    font-style: italic;
+    color: rgb(var(--text-ivory));
+    opacity: 0.9;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-golden {
+        border-radius: 16px;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    .golden-spiral-text::before {
+        display: none;
+    }
+}
+
+/* Dark Cosmic Background Variations */
+.bg-cosmic-void {
+    background: radial-gradient(ellipse at center, rgb(var(--cosmic-black)) 0%, rgb(var(--cosmic-deep)) 100%);
+}
+
+/* Enhanced Widget Transitions */
+.card-golden, .stat-card {
+    transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    will-change: transform;
+}
+.card-golden:hover, .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -12px rgba(212, 175, 55, 0.3);
+}
+.btn-golden {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+.btn-golden::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s, height 0.5s;
+}
+.btn-golden:active::after {
+    width: 100%;
+    height: 100%;
+}
+/* Skeleton Loading Animation */
+.animate-pulse {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.05) 25%, rgba(212, 175, 55, 0.15) 50%, rgba(212, 175, 55, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
