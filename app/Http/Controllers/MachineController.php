@@ -218,3 +218,110 @@ class MachineController extends Controller
         ]);
     }
 }
+
+    /**
+     * Get global machine statistics (AJAX)
+     */
+    public function globalStats()
+    {
+        $machines = Machine::where('is_active', true)->get();
+        
+        $stats = [
+            'total_machines' => $machines->count(),
+            'total_invested' => $machines->sum(function ($m) {
+                return $m->investments()->sum('amount');
+            }),
+            'active_investments' => $machines->sum(function ($m) {
+                return $m->activeInvestments()->count();
+            }),
+            'total_investors' => MachineInvestment::distinct('user_id')->count('user_id'),
+        ];
+        
+        return response()->json(['success' => true, 'data' => $stats]);
+    }
+
+    /**
+     * Get machine statistics (AJAX)
+     */
+    public function machineStats(Machine $machine)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $machine->getStatistics()
+        ]);
+    }
+
+    /**
+     * Public statistics (no auth required)
+     */
+    public function publicStats()
+    {
+        $machines = Machine::where('is_active', true)->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'machines' => $machines->map(function ($m) {
+                    return [
+                        'code' => $m->code,
+                        'name' => $m->name,
+                        'risk_profile' => $m->risk_profile,
+                        'vip1_amount' => $m->getVIPAmounts()[1],
+                        'growth_rate' => $m->growth_rate,
+                    ];
+                }),
+                'total_invested' => $machines->sum(function ($m) {
+                    return $m->investments()->sum('amount');
+                }),
+            ]
+        ]);
+    }
+
+    /**
+     * Early withdrawal from machine investment
+     */
+    public function earlyWithdraw(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        if (!$investment->isActive()) {
+            return response()->json(['error' => 'Investment is not active'], 422);
+        }
+        
+        $penaltyRate = $investment->machine->early_withdrawal_penalty ?? 20;
+        $refundAmount = $investment->amount * (1 - $penaltyRate / 100);
+        
+        try {
+            DB::transaction(function () use ($investment, $refundAmount, $penaltyRate) {
+                // Refund to wallet
+                $investment->user->wallet->increment('balance', $refundAmount);
+                
+                // Record transaction
+                $investment->user->transactions()->create([
+                    'type' => 'machine_early_withdrawal',
+                    'amount' => $refundAmount,
+                    'status' => 'completed',
+                    'description' => "Early withdrawal from {$investment->machine->name} (Penalty: {$penaltyRate}%)",
+                    'balance_after' => $investment->user->wallet->balance,
+                ]);
+                
+                // Update investment status
+                $investment->status = 'cancelled';
+                $investment->save();
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Early withdrawal processed. Refund: KES " . number_format($refundAmount, 2),
+                'refund_amount' => $refundAmount,
+                'penalty' => $penaltyRate,
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Withdrawal failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
