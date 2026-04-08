@@ -30,6 +30,7 @@ class WalletBalanceUpdated implements ShouldBroadcast
         return [
             'balance' => $this->wallet->balance,
             'locked_balance' => $this->wallet->locked_balance,
+            'updated_at' => $this->wallet->updated_at->toIso8601String(),
         ];
     }
 }

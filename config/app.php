@@ -4,16 +4,13 @@ return [
     'name' => env('APP_NAME', 'Racksephnox'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', 'https://racksephnox.up.railway.app'),
     'timezone' => 'Africa/Nairobi',
     'locale' => 'en',
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'key' => env('APP_KEY'),
     'cipher' => 'AES-256-CBC',
-    'previous_keys' => [
-        ...array_filter(explode(',', (string) env('APP_PREVIOUS_KEYS', ''))),
-    ],
     'providers' => [
         // Laravel Framework Service Providers
         Illuminate\Auth\AuthServiceProvider::class,
@@ -41,7 +38,6 @@ return [
 
         // Package Service Providers
         Laravel\Sanctum\SanctumServiceProvider::class,
-        Laravel\Telescope\TelescopeServiceProvider::class,
         Sentry\Laravel\ServiceProvider::class,
         Laravel\Reverb\ReverbServiceProvider::class,
 
@@ -50,7 +46,8 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\TelescopeServiceProvider::class,
+        App\Providers\ViewServiceProvider::class,
+        App\Providers\PerformanceServiceProvider::class,
     ],
     'aliases' => [
         'App' => Illuminate\Support\Facades\App::class,

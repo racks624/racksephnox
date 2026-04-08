@@ -6,7 +6,7 @@
     <a href="{{ route('admin.plans.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded">Back</a>
 </div>
 
-<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow max-w-lg">
+<div class="bg-white p-6 rounded-lg shadow max-w-lg">
     <form method="POST" action="{{ route('admin.plans.update', $plan) }}">
         @csrf @method('PUT')
         <div class="mb-4">

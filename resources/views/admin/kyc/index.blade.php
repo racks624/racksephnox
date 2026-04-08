@@ -4,8 +4,8 @@
 <h2 class="text-2xl font-bold mb-6">Pending KYC Documents</h2>
 
 @if($documents->count())
-<table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
-    <thead class="bg-gray-100 dark:bg-gray-700">
+<table class="min-w-full bg-white rounded-lg">
+    <thead class="bg-gray-100">
         <tr>
             <th class="px-6 py-3 text-left">User</th>
             <th class="px-6 py-3 text-left">Document Type</th>

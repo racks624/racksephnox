@@ -4,17 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\CryptoPrice;
+use App\Services\CurrencyService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
+    protected $currencyService;
+
+    public function __construct(CurrencyService $currencyService)
+    {
+        $this->currencyService = $currencyService;
+    }
+
     public function index()
     {
         $user = Auth::user()->load('wallet', 'investments.plan', 'referrals', 'tradingAccount');
 
         $unreadNotificationsCount = $user->unreadNotifications->count();
         $latestNotifications = $user->notifications()->latest()->take(5)->get();
+
+        // Get user's preferred currency
+        $currency = $user->preferred_currency ?? session('currency', 'KES');
 
         $dashboardData = Cache::remember('dashboard_' . $user->id, 60, function () use ($user) {
             $totalInvested = $user->investments->sum('amount');
@@ -51,9 +62,10 @@ class DashboardController extends Controller
         });
 
         $cryptoPrices = CryptoPrice::latest()->take(5)->get();
+        $btcPrice = $cryptoPrices->where('symbol', 'BTC')->first()->price_kes ?? 0;
 
         return view('dashboard', array_merge($dashboardData, compact(
-            'user', 'cryptoPrices', 'unreadNotificationsCount', 'latestNotifications'
+            'user', 'cryptoPrices', 'unreadNotificationsCount', 'latestNotifications', 'currency', 'btcPrice'
         )));
     }
 

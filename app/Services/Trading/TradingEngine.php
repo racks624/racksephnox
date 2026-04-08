@@ -31,7 +31,7 @@ class TradingEngine
     public function placeOrder(User $user, $side, $orderType, $amountBtc, $limitPrice = null, $stopPrice = null)
     {
         $marketPrice = $this->getMarketPrice();
-
+        
         if ($side === 'buy') {
             $totalKes = $orderType === 'market' ? $amountBtc * $marketPrice : $amountBtc * $limitPrice;
             if ($user->tradingAccount->balance < $totalKes) {
@@ -80,13 +80,14 @@ class TradingEngine
                 $order->user->tradingAccount->increment('balance', $totalKes);
                 $order->user->tradingAccount->credit($totalKes, "Market sell {$order->amount_btc} BTC at KES {$price}");
             }
+
             $order->update([
                 'filled_amount' => $order->amount_btc,
                 'filled_kes' => $totalKes,
                 'price_per_btc' => $price,
                 'status' => 'completed',
             ]);
-            
+
             $this->trackAndAwardBonus($order->user);
             $this->executeCopyTrades($order);
         });
@@ -98,6 +99,7 @@ class TradingEngine
     public function matchOrder(TradeOrder $order)
     {
         $oppositeSide = $order->side === 'buy' ? 'sell' : 'buy';
+        
         $matchingOrders = TradeOrder::where('user_id', '!=', $order->user_id)
             ->where('side', $oppositeSide)
             ->where('order_type', 'limit')
@@ -113,12 +115,14 @@ class TradingEngine
             ->get();
 
         $remainingAmount = $order->getRemainingAmount();
+        
         foreach ($matchingOrders as $match) {
             if ($remainingAmount <= 0) break;
+            
             $matchRemaining = $match->getRemainingAmount();
             $fillAmount = min($remainingAmount, $matchRemaining);
             $fillPrice = $match->limit_price;
-
+            
             $this->executeTrade($order, $match, $fillAmount, $fillPrice);
             $remainingAmount -= $fillAmount;
         }
@@ -137,6 +141,7 @@ class TradingEngine
     protected function executeTrade(TradeOrder $buyOrder, TradeOrder $sellOrder, $amount, $price)
     {
         $totalKes = $amount * $price;
+        
         DB::transaction(function () use ($buyOrder, $sellOrder, $amount, $totalKes, $price) {
             $buyOrder->increment('filled_amount', $amount);
             $buyOrder->increment('filled_kes', $totalKes);
@@ -162,7 +167,7 @@ class TradingEngine
                 $buyOrder->user->tradingAccount->decrement('balance', $totalKes);
                 $sellOrder->user->tradingAccount->increment('balance', $totalKes);
             }
-            
+
             $this->trackAndAwardBonus($buyOrder->user);
             $this->trackAndAwardBonus($sellOrder->user);
             $this->executeCopyTrades($buyOrder);
@@ -186,19 +191,19 @@ class TradingEngine
     public function trackAndAwardBonus($user)
     {
         $tracker = TradingBonusTracker::firstOrCreate(['user_id' => $user->id]);
-        
+
         $lastTrade = TradeOrder::where('user_id', $user->id)
             ->where('status', 'completed')
             ->latest()
             ->first();
-            
+
         if ($lastTrade && $lastTrade->created_at->lt(now()->subHours(24))) {
             $tracker->trade_count_24h = 0;
         }
-        
+
         $tracker->increment('trade_count_24h');
         
-        if ($tracker->trade_count_24h >= 8 && 
+        if ($tracker->trade_count_24h >= 8 &&
             (!$tracker->last_bonus_awarded_at || $tracker->last_bonus_awarded_at->lt(now()->subHours(24)))) {
             
             $bonusAmount = $user->tradingAccount->balance * 0.08;
@@ -238,7 +243,7 @@ class TradingEngine
             $follower = $follow->follower;
             $copyRatio = $follow->copy_ratio / 100;
             $copiedAmount = $originalOrder->amount_btc * $copyRatio;
-            
+
             if ($follow->max_copy_amount) {
                 $maxBtc = $follow->max_copy_amount / $originalOrder->price_per_btc;
                 if ($copiedAmount > $maxBtc) {
@@ -247,6 +252,7 @@ class TradingEngine
             }
 
             $totalKes = $copiedAmount * $originalOrder->price_per_btc;
+            
             if ($follower->tradingAccount->balance < $totalKes) {
                 continue;
             }

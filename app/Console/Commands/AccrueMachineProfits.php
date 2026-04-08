@@ -4,32 +4,40 @@ namespace App\Console\Commands;
 
 use App\Models\MachineInvestment;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AccrueMachineProfits extends Command
 {
-    protected $signature = 'machines:accrue';
-    protected $description = 'Accrue daily profits for active machine investments';
+    protected $signature = 'machines:accrue-profits';
+    protected $description = 'Accrue daily profits for all active machine investments';
 
     public function handle()
     {
-        $investments = MachineInvestment::where('status', 'active')->get();
+        $this->info('Starting daily profit accrual...');
+        
+        $investments = MachineInvestment::where('status', 'active')
+            ->whereDate('end_date', '>=', now())
+            ->get();
+        
+        $totalAccrued = 0;
         $count = 0;
-
-        foreach ($investments as $inv) {
-            DB::transaction(function () use ($inv, &$count) {
-                // Credit daily profit to user's wallet
-                $inv->user->wallet->credit($inv->daily_profit, 'Daily profit from machine ' . $inv->machine->name . ' VIP ' . $inv->vip_level, 'interest');
-
-                // If end date passed, mark as completed
-                if (now()->gte($inv->end_date)) {
-                    $inv->update(['status' => 'completed']);
-                }
-
+        
+        foreach ($investments as $investment) {
+            $accrued = $investment->accrueDailyProfit();
+            if ($accrued) {
+                $totalAccrued += $accrued;
                 $count++;
-            });
+                $this->line("Accrued KES " . number_format($accrued, 2) . " for investment #{$investment->id}");
+            }
         }
-
-        $this->info("Accrued profits for {$count} machine investments.");
+        
+        $this->info("Completed! Accrued KES " . number_format($totalAccrued, 2) . " for {$count} investments.");
+        
+        Log::info("Machine profits accrued", [
+            'count' => $count,
+            'total' => $totalAccrued
+        ]);
+        
+        return Command::SUCCESS;
     }
 }

@@ -7,7 +7,7 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+    <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">Profile</h3>
         <p><strong>ID:</strong> {{ $user->id }}</p>
         <p><strong>Name:</strong> {{ $user->name }}</p>
@@ -19,14 +19,14 @@
         <p><strong>Joined:</strong> {{ $user->created_at->format('Y-m-d H:i') }}</p>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+    <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">Wallet</h3>
         <p><strong>Balance:</strong> KES {{ number_format($user->wallet->balance, 2) }}</p>
         <p><strong>Locked:</strong> KES {{ number_format($user->wallet->locked_balance, 2) }}</p>
     </div>
 </div>
 
-<div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+<div class="mt-6 bg-white p-6 rounded-lg shadow">
     <h3 class="text-lg font-semibold mb-4">KYC Documents</h3>
     <table class="min-w-full">
         <thead>
@@ -48,7 +48,7 @@
     </table>
 </div>
 
-<div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+<div class="mt-6 bg-white p-6 rounded-lg shadow">
     <h3 class="text-lg font-semibold mb-4">Recent Transactions</h3>
     <table class="min-w-full">
         <thead>

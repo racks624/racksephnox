@@ -11,7 +11,7 @@
 }
 .particle {
     position: absolute;
-    background: rgba(212, 175, 55, 0.3);
+    background: radial-gradient(circle, #FFD700, #D4AF37);
     border-radius: 50%;
     pointer-events: none;
     animation: floatParticle linear infinite;

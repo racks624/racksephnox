@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MachineController extends Controller
 {
@@ -21,12 +22,21 @@ class MachineController extends Controller
         $activeInvestments = $user->machineInvestments()
             ->where('status', MachineInvestment::STATUS_ACTIVE)
             ->with('machine')
-            ->get();
+            ->get()
+            ->map(function ($inv) {
+                $inv->progress_percentage = $inv->progressPercentage();
+                $inv->days_remaining = $inv->daysRemaining();
+                return $inv;
+            });
 
         $totalInvested = $activeInvestments->sum('amount');
         $totalProjectedProfit = $activeInvestments->sum('total_return') - $totalInvested;
+        $totalEarnedProfit = $activeInvestments->sum('profit_credited');
 
-        return view('machines.index', compact('machines', 'activeInvestments', 'totalInvested', 'totalProjectedProfit'));
+        return view('machines.index', compact(
+            'machines', 'activeInvestments', 'totalInvested', 
+            'totalProjectedProfit', 'totalEarnedProfit'
+        ));
     }
 
     public function show($code)
@@ -38,6 +48,12 @@ class MachineController extends Controller
             ->where('machine_id', $machine->id)
             ->where('status', MachineInvestment::STATUS_ACTIVE)
             ->first();
+            
+        if ($activeInvestment) {
+            $activeInvestment->progress_percentage = $activeInvestment->progressPercentage();
+            $activeInvestment->days_remaining = $activeInvestment->daysRemaining();
+            $activeInvestment->current_profit = $activeInvestment->currentProfit();
+        }
 
         $investmentHistory = $user->machineInvestments()
             ->where('machine_id', $machine->id)
@@ -46,9 +62,13 @@ class MachineController extends Controller
             ->take(10)
             ->get();
 
-        $vipAmounts = $machine->getVIPAmounts();
+        $vipDetails = $machine->getVIPDetails();
+        $statistics = $machine->getStatistics();
 
-        return view('machines.show', compact('machine', 'activeInvestment', 'investmentHistory', 'vipAmounts'));
+        return view('machines.show', compact(
+            'machine', 'activeInvestment', 'investmentHistory', 
+            'vipDetails', 'statistics'
+        ));
     }
 
     public function invest(Request $request, Machine $machine)
@@ -68,18 +88,33 @@ class MachineController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json(['error' => 'You already have an active investment in this machine.'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active investment in this machine.'
+            ], 422);
         }
 
         // Check wallet balance
         if ($user->wallet->balance < $amount) {
-            return response()->json(['error' => 'Insufficient wallet balance. Please deposit funds.'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient wallet balance. Please deposit funds.'
+            ], 422);
         }
 
         try {
             DB::transaction(function () use ($user, $machine, $amount, $vipLevel) {
                 // Debit wallet
-                $user->wallet->debit($amount, 'Machine investment: ' . $machine->name . ' VIP ' . $vipLevel);
+                $user->wallet->decrement('balance', $amount);
+                
+                // Record transaction
+                $user->transactions()->create([
+                    'type' => 'machine_investment',
+                    'amount' => -$amount,
+                    'status' => 'completed',
+                    'description' => "Investment in {$machine->name} - VIP {$vipLevel}",
+                    'balance_after' => $user->wallet->balance,
+                ]);
 
                 // Calculate returns
                 $dailyProfit = $machine->getDailyProfit($amount);
@@ -98,6 +133,7 @@ class MachineController extends Controller
                     'start_date' => $startDate,
                     'end_date' => $endDate,
                     'status' => MachineInvestment::STATUS_ACTIVE,
+                    'profit_credited' => 0,
                 ]);
             });
 
@@ -108,10 +144,77 @@ class MachineController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Investment successful! Your daily profit will start accruing tomorrow.',
+                'data' => [
+                    'amount' => $amount,
+                    'daily_profit' => $dailyProfit,
+                    'total_return' => $totalReturn,
+                    'end_date' => $endDate->format('Y-m-d'),
+                ],
                 'redirect' => route('machines.show', $machine->code)
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Investment failed: ' . $e->getMessage()], 500);
+            Log::error('Investment failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Investment failed: ' . $e->getMessage()
+            ], 500);
         }
+    }
+
+    public function status(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $investment->id,
+                'amount' => $investment->amount,
+                'daily_profit' => $investment->daily_profit,
+                'current_profit' => $investment->currentProfit(),
+                'total_return' => $investment->total_return,
+                'profit_credited' => $investment->profit_credited,
+                'start_date' => $investment->start_date->format('Y-m-d'),
+                'end_date' => $investment->end_date->format('Y-m-d'),
+                'days_elapsed' => $investment->daysElapsed(),
+                'days_remaining' => $investment->daysRemaining(),
+                'progress_percentage' => $investment->progressPercentage(),
+                'status' => $investment->status,
+            ]
+        ]);
+    }
+
+    public function myInvestments()
+    {
+        $user = Auth::user();
+        
+        $investments = MachineInvestment::where('user_id', $user->id)
+            ->with('machine')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'machine_name' => $inv->machine->name,
+                    'machine_code' => $inv->machine->code,
+                    'vip_level' => $inv->vip_level,
+                    'amount' => $inv->amount,
+                    'daily_profit' => $inv->daily_profit,
+                    'total_return' => $inv->total_return,
+                    'profit_credited' => $inv->profit_credited,
+                    'status' => $inv->status,
+                    'start_date' => $inv->start_date->format('Y-m-d'),
+                    'end_date' => $inv->end_date->format('Y-m-d'),
+                    'progress' => $inv->progressPercentage(),
+                    'days_remaining' => $inv->daysRemaining(),
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $investments
+        ]);
     }
 }

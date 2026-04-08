@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Racksephnox') }} - Divine Golden Spirit</title>
+    <title>{{ config('app.name', 'Racksephnox') }} – Divine Golden Cryptocurrency Platform</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="icon" type="image/svg+xml" href="{{ asset('img/favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <script>
         window.themeManager = {
             currentTheme: localStorage.getItem('theme') || 'light',
@@ -34,7 +34,7 @@
                     <div class="flex">
                         <div class="shrink-0 flex items-center">
                             <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
-                                <img src="{{ asset('img/logo.svg') }}" alt="Racksephnox" class="h-10 w-auto">
+                                <img src="{{ asset('img/logo-racksephnox.svg') }}" alt="Racksephnox" class="h-10 w-auto">
                                 <span class="text-xl font-bold golden-title hidden sm:inline">Racksephnox</span>
                             </a>
                         </div>
@@ -189,4 +189,3 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
-<link rel="icon" type="image/svg+xml" href="{{ asset("favicon.svg") }}">

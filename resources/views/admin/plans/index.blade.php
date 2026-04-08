@@ -6,8 +6,8 @@
     <a href="{{ route('admin.plans.create') }}" class="px-4 py-2 bg-green-600 text-white rounded">+ New Plan</a>
 </div>
 
-<table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
-    <thead class="bg-gray-100 dark:bg-gray-700">
+<table class="min-w-full bg-white rounded-lg">
+    <thead class="bg-gray-100">
         <tr>
             <th class="px-6 py-3 text-left">Name</th>
             <th class="px-6 py-3 text-left">Min</th>

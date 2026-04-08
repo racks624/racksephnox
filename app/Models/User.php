@@ -12,6 +12,11 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
+    'phone',
+        'referral_code',
+        'referred_by',
+        'kyc_status',
+        'is_active',
         'name', 'email', 'phone', 'password',
         'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
         'is_admin', 'kyc_level', 'is_verified',

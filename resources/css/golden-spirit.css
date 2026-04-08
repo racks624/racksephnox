@@ -2,63 +2,26 @@
    Divine Golden Spirit – Sacred Elements
    ======================================== */
 
-/* Golden Spiral Decorations */
-.golden-spiral {
-    position: relative;
-}
-.golden-spiral::before {
-    content: '∞';
-    font-size: 3rem;
-    color: rgba(var(--gold), 0.1);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 0;
+/* Golden Pulse Animation */
+@keyframes goldenPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
 }
 
-/* Golden border for active elements */
-.active-golden-border {
-    border-left: 3px solid rgb(var(--gold));
-    border-radius: 0 0 0 0;
-}
-
-/* Shimmer effect for gold text */
-.shimmer-gold {
-    background: linear-gradient(90deg, 
-        rgba(var(--gold), 0) 0%,
-        rgba(var(--gold), 0.8) 50%,
-        rgba(var(--gold), 0) 100%);
-    background-size: 200% auto;
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    animation: shimmer 2s linear infinite;
-}
-
-/* Golden radial gradient background */
-.bg-gold-radial {
-    background: radial-gradient(circle at center, rgba(var(--gold), 0.15), transparent 80%);
-}
-
-/* Golden ring for icons */
-.icon-golden-ring {
-    border: 1px solid rgba(var(--gold), 0.5);
-    border-radius: 50%;
-    padding: 8px;
-    transition: all 0.3s ease;
-}
-.icon-golden-ring:hover {
-    border-color: rgb(var(--gold));
-    box-shadow: 0 0 15px rgba(var(--gold), 0.5);
-}
-
-/* Sacred symbol – infinity */
+/* Sacred Infinity Symbol */
 .sacred-infinity {
     font-size: 2rem;
-    color: rgb(var(--gold));
+    background: linear-gradient(135deg, #FFD700, #C0C0C0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     opacity: 0.6;
     display: inline-block;
     animation: goldenPulse 2s infinite;
+}
+
+/* Golden Border for Active Elements */
+.active-golden-border {
+    border-left: 3px solid #D4AF37;
+    border-radius: 0 0 0 0;
 }

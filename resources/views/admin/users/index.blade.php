@@ -10,8 +10,8 @@
     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded ml-2">Search</button>
 </form>
 
-<table class="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-    <thead class="bg-gray-100 dark:bg-gray-700">
+<table class="min-w-full bg-white rounded-lg overflow-hidden">
+    <thead class="bg-gray-100">
         <tr>
             <th class="px-6 py-3 text-left">ID</th>
             <th class="px-6 py-3 text-left">Name</th>

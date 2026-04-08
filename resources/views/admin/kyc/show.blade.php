@@ -6,7 +6,7 @@
     <a href="{{ route('admin.kyc.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded">Back</a>
 </div>
 
-<div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+<div class="bg-white p-6 rounded-lg shadow">
     <p><strong>User:</strong> {{ $document->user->name }} ({{ $document->user->email }})</p>
     <p><strong>Document Type:</strong> {{ str_replace('_', ' ', ucfirst($document->document_type)) }}</p>
     <p><strong>Uploaded:</strong> {{ $document->created_at->format('Y-m-d H:i') }}</p>

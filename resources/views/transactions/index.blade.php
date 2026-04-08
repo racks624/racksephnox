@@ -5,7 +5,7 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Transaction History</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Transaction History</h1>
             <div class="flex gap-2">
                 <button @click="exportData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <i class="fas fa-file-excel mr-2"></i>Export CSV
@@ -18,7 +18,7 @@
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-md p-6 dark:bg-gray-800">
+            <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">Total Credits</p>
@@ -27,7 +27,7 @@
                     <i class="fas fa-arrow-up text-green-500 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-md p-6 dark:bg-gray-800">
+            <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">Total Debits</p>
@@ -36,7 +36,7 @@
                     <i class="fas fa-arrow-down text-red-500 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-md p-6 dark:bg-gray-800">
+            <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500">Total Transactions</p>
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6 dark:bg-gray-800">
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
             <form method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Type</label>
@@ -106,10 +106,10 @@
         </div>
 
         <!-- Transactions Table -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden dark:bg-gray-800">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
                         指数
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase">Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase">Type</th>
@@ -119,9 +119,9 @@
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase">Reference</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody class="divide-y divide-gray-200">
                         @forelse($transactions as $tx)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 {{ $tx->created_at->format('Y-m-d H:i:s') }}
                             </td>
@@ -151,7 +151,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-t border-gray-200">
                 {{ $transactions->links() }}
             </div>
         </div>
