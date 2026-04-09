@@ -3,64 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvestmentPlan;
-use App\Services\Investment\InvestmentManager;
+use App\Models\Machine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class InvestmentController extends Controller
 {
-    protected $investmentManager;
-
-    public function __construct(InvestmentManager $investmentManager)
-    {
-        $this->investmentManager = $investmentManager;
-    }
-
+    /**
+     * Show investment options (redirect to RX Machines)
+     */
     public function index()
     {
-        $plans = Cache::remember('active_investment_plans', 600, function () {
-            return InvestmentPlan::where('is_active', true)->orderBy('min_amount')->get();
+        $machines = Cache::remember('machines_for_investment', 300, function () {
+            return Machine::where('is_active', true)->get();
         });
-
+        
         $user = Auth::user();
-        $investments = $user->investments()->with('plan')->latest()->get();
-
-        // Calculate totals for the summary cards
-        $totalInvested = $investments->sum('amount');
-        $totalProjected = $investments->sum('total_projected_profit');
-
-        // For each plan, compute VIP amounts using golden ratio
-        $plansWithVIP = $plans->map(function ($plan) {
-            $vipAmounts = $plan->getVIPAmounts();
-            $plan->vip_amounts = $vipAmounts;
-            return $plan;
-        });
-
-        return view('investments', compact('plansWithVIP', 'investments', 'totalInvested', 'totalProjected'));
+        $activeMachineInvestments = $user->machineInvestments()
+            ->where('status', 'active')
+            ->with('machine')
+            ->get();
+        
+        $legacyInvestments = $user->investments()
+            ->with('plan')
+            ->whereNull('machine_id')
+            ->where('status', 'active')
+            ->get();
+        
+        return view('investments.index', compact('machines', 'activeMachineInvestments', 'legacyInvestments'));
     }
 
+    /**
+     * Store investment (redirect to machines)
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'plan_id' => 'required|exists:investment_plans,id',
-            'vip_level' => 'required|in:1,2,3',
-            'amount' => 'required|numeric|min:0',
-        ]);
+        return redirect()->route('machines.index')->with('info', '✨ Please use the RX Machine Series for new investments with VIP tiers and 8888 Hz Wealth Frequency.');
+    }
 
-        $plan = InvestmentPlan::findOrFail($request->plan_id);
-        $vipAmounts = $plan->getVIPAmounts();
-        $amount = $vipAmounts[$request->vip_level];
-
-        if (abs($request->amount - $amount) > 0.01) {
-            return back()->withErrors(['error' => 'The amount must match the selected VIP level.']);
-        }
-
-        try {
-            $this->investmentManager->create(auth()->user(), $plan, $amount);
-            return redirect()->route('web.investments')->with('success', 'Investment created successfully.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
+    /**
+     * Show investment details
+     */
+    public function show($id)
+    {
+        $investment = Auth::user()->investments()->with('plan')->findOrFail($id);
+        return view('investments.show', compact('investment'));
     }
 }

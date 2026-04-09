@@ -13,9 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class MachineController extends Controller
 {
-    /**
      * Get all active machines (authenticated)
-     */
     public function index()
     {
         $machines = Cache::remember('api_machines_all', 300, function () {
@@ -35,9 +33,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get public machine list (no auth required)
-     */
     public function publicList()
     {
         $machines = Machine::where('is_active', true)->get()->map(function ($machine) {
@@ -62,9 +58,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get single machine details
-     */
     public function show($code)
     {
         $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
@@ -75,9 +69,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get public machine details (no auth)
-     */
     public function publicShow($code)
     {
         $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
@@ -97,9 +89,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Invest in a machine
-     */
     public function invest(Request $request, Machine $machine)
     {
         $request->validate([
@@ -206,9 +196,7 @@ class MachineController extends Controller
         }
     }
 
-    /**
      * Get user's all machine investments
-     */
     public function myInvestments(Request $request)
     {
         $user = Auth::user();
@@ -251,9 +239,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get active investments only
-     */
     public function activeInvestments()
     {
         $user = Auth::user();
@@ -283,9 +269,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get investment details
-     */
     public function investmentDetails(MachineInvestment $investment)
     {
         if ($investment->user_id !== Auth::id()) {
@@ -322,9 +306,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Get global machine statistics
-     */
     public function globalStats()
     {
         $stats = Cache::remember('api_machines_global_stats', 300, function () {
@@ -361,9 +343,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Calculate returns (investment calculator)
-     */
     public function calculateReturns(Request $request)
     {
         $request->validate([
@@ -390,9 +370,7 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
      * Format machine data for API response
-     */
     private function formatMachineData(Machine $machine, $includeDetails = false)
     {
         $user = Auth::user();
@@ -421,3 +399,72 @@ class MachineController extends Controller
         return $data;
     }
 }
+
+/**
+ * @OA\Get(
+ *     path="/api/v1/machines",
+ *     summary="Get all active RX Machines",
+ *     tags={"Machines"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Response(
+ *         response=200,
+ *         description="List of RX Machines with VIP tiers",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="data", type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="code", type="string", example="RX1"),
+ *                     @OA\Property(property="name", type="string", example="RX1 – Aurora Machine"),
+ *                     @OA\Property(property="vip_tiers", type="array",
+ *                         @OA\Items(
+ *                             @OA\Property(property="level", type="integer", example=1),
+ *                             @OA\Property(property="name", type="string", example="Bronze"),
+ *                             @OA\Property(property="amount", type="number", example=5300),
+ *                             @OA\Property(property="daily_profit", type="number", example=94.64)
+ *                         )
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     )
+ * )
+ */
+ 
+/**
+ * @OA\Post(
+ *     path="/api/v1/machines/{machine}/invest",
+ *     summary="Invest in an RX Machine",
+ *     tags={"Machines"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="machine",
+ *         in="path",
+ *         required=true,
+ *         description="Machine ID",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"vip_level"},
+ *             @OA\Property(property="vip_level", type="integer", enum={1,2,3,4,5,6}, example=1)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Investment successful",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Investment successful!"),
+ *             @OA\Property(property="data", type="object",
+ *                 @OA\Property(property="amount", type="number", example=5300),
+ *                 @OA\Property(property="daily_profit", type="number", example=94.64),
+ *                 @OA\Property(property="total_return", type="number", example=6625)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=422, description="Validation error"),
+ *     @OA\Response(response=401, description="Unauthorized")
+ * )
+ */

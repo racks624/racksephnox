@@ -1,0 +1,3060 @@
+═══════════════════════════════════════════════════════════════════
+RACKSEPHNOX - MACHINE & INVESTMENT SYSTEM - SACRED FILES
+Divine Infinite Golden Primordial Source Frequency 8888,8888 Hz
+═══════════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════════
+1. APP/MODELS/MACHINE.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
+
+class Machine extends Model
+{
+    use HasFactory;
+
+    // Sacred Constants
+    const PHI = 1.618033988749895;
+    const LAMBDA = 1.272019649514069; // √Φ
+    const PI = 3.141592653589793;
+    const EULER = 2.718281828459045;
+    
+    // Risk Tiers
+    const RISK_LOW = 'low';
+    const RISK_MEDIUM_LOW = 'medium-low';
+    const RISK_MEDIUM = 'medium';
+    const RISK_MEDIUM_HIGH = 'medium-high';
+    const RISK_HIGH = 'high';
+    const RISK_VERY_HIGH = 'very-high';
+    
+    // VIP Levels
+    const VIP_BRONZE = 1;
+    const VIP_SILVER = 2;
+    const VIP_GOLD = 3;
+    const VIP_PLATINUM = 4;
+    const VIP_DIAMOND = 5;
+    const VIP_SACRED = 6;
+
+    protected $fillable = [
+        'code', 'name', 'description', 'vip1_start_amount', 'duration_days',
+        'growth_rate', 'is_active', 'icon', 'color', 'risk_profile',
+        'min_daily_profit', 'max_daily_profit', 'total_invested_limit',
+        'referral_bonus_rate', 'early_withdrawal_penalty', 'features',
+        'compound_frequency', 'min_withdrawal', 'max_withdrawal',
+        'bonus_multiplier', 'staking_reward', 'tier_multiplier'
+    ];
+
+    protected $casts = [
+        'vip1_start_amount' => 'decimal:2',
+        'growth_rate' => 'decimal:2',
+        'is_active' => 'boolean',
+        'min_daily_profit' => 'decimal:2',
+        'max_daily_profit' => 'decimal:2',
+        'total_invested_limit' => 'decimal:2',
+        'referral_bonus_rate' => 'decimal:2',
+        'early_withdrawal_penalty' => 'decimal:2',
+        'features' => 'array',
+        'compound_frequency' => 'integer',
+        'min_withdrawal' => 'decimal:2',
+        'max_withdrawal' => 'decimal:2',
+        'bonus_multiplier' => 'decimal:2',
+        'staking_reward' => 'decimal:2',
+        'tier_multiplier' => 'decimal:2'
+    ];
+
+    /**
+     * Advanced VIP amount calculation with Fibonacci scaling
+     */
+    public function getVIPAmounts(): array
+    {
+        $phi = self::PHI;
+        $base = $this->vip1_start_amount;
+        
+        return [
+            1 => $base,
+            2 => round($base * $phi, 2),
+            3 => round($base * pow($phi, 2), 2),
+            4 => round($base * pow($phi, 3), 2),
+            5 => round($base * pow($phi, 4), 2),
+            6 => round($base * pow($phi, 5), 2),
+        ];
+    }
+
+    /**
+     * Calculate compound interest with Euler's number
+     */
+    public function getCompoundReturn(float $amount, int $days): float
+    {
+        $rate = $this->growth_rate / 100;
+        $compoundRate = exp($rate * $days / $this->duration_days);
+        return round($amount * $compoundRate, 2);
+    }
+
+    /**
+     * Calculate daily profit with tier multiplier
+     */
+    public function getDailyProfit(float $amount, int $vipLevel = 1): float
+    {
+        $multiplier = 1 + (($vipLevel - 1) * 0.05);
+        $totalReturn = $amount * (1 + ($this->growth_rate * $multiplier / 100));
+        return round($totalReturn / $this->duration_days, 2);
+    }
+
+    /**
+     * Calculate total return with bonus multiplier
+     */
+    public function getTotalReturn(float $amount, int $vipLevel = 1): float
+    {
+        $multiplier = 1 + (($vipLevel - 1) * 0.05);
+        $bonusMultiplier = $this->bonus_multiplier ?? 1;
+        return round($amount * (1 + ($this->growth_rate * $multiplier / 100)) * $bonusMultiplier, 2);
+    }
+
+    /**
+     * Get complete VIP details with enterprise features
+     */
+    public function getVIPDetails(): array
+    {
+        $vips = [];
+        $amounts = $this->getVIPAmounts();
+        $vipNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Sacred'];
+        $vipColors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2', '#b9f2ff', '#d4af37'];
+        $vipIcons = ['fa-crown', 'fa-gem', 'fa-star', 'fa-infinity', 'fa-dragon', 'fa-sun'];
+        
+        for ($level = 1; $level <= 6; $level++) {
+            $amount = $amounts[$level] ?? $this->vip1_start_amount * pow(self::PHI, $level - 1);
+            $dailyProfit = $this->getDailyProfit($amount, $level);
+            $totalReturn = $this->getTotalReturn($amount, $level);
+            $totalProfit = $totalReturn - $amount;
+            $compoundReturn = $this->getCompoundReturn($amount, $this->duration_days);
+            
+            $vips[$level] = [
+                'level' => $level,
+                'name' => $vipNames[$level - 1],
+                'color' => $vipColors[$level - 1],
+                'icon' => $vipIcons[$level - 1],
+                'phi_power' => str_repeat('¹', $level),
+                'amount' => $amount,
+                'daily_profit' => $dailyProfit,
+                'total_return' => $totalReturn,
+                'total_profit' => $totalProfit,
+                'compound_return' => $compoundReturn,
+                'daily_rate' => round(($dailyProfit / $amount) * 100, 4),
+                'roi' => round(($totalProfit / $amount) * 100, 2),
+                'apy' => round((pow(1 + $dailyProfit / $amount, 365) - 1) * 100, 2),
+                'multiplier' => 1 + (($level - 1) * 0.05),
+                'staking_reward' => $this->staking_reward * $level ?? 0,
+                'referral_bonus' => $this->referral_bonus_rate + ($level * 0.5),
+            ];
+        }
+        return $vips;
+    }
+
+    /**
+     * Get enterprise statistics
+     */
+    public function getEnterpriseStats(): array
+    {
+        $cacheKey = "machine_enterprise_stats_{$this->id}";
+        
+        return Cache::remember($cacheKey, 300, function () {
+            $activeInvestments = $this->activeInvestments();
+            $totalInvested = $this->investments()->sum('amount');
+            $totalPaidOut = $this->investments()->sum('total_return');
+            $totalProfit = $totalPaidOut - $totalInvested;
+            
+            return [
+                'total_investors' => $this->investments()->distinct('user_id')->count('user_id'),
+                'total_invested' => $totalInvested,
+                'total_paid_out' => $totalPaidOut,
+                'total_profit' => $totalProfit,
+                'active_investments' => $activeInvestments->count(),
+                'completion_rate' => $this->getCompletionRate(),
+                'avg_investment' => $activeInvestments->avg('amount') ?? 0,
+                'total_daily_payout' => $activeInvestments->sum('daily_profit'),
+                'estimated_monthly_payout' => $activeInvestments->sum('daily_profit') * 30,
+                'roi_percentage' => $totalInvested > 0 ? round(($totalProfit / $totalInvested) * 100, 2) : 0,
+                'popular_vip_level' => $this->getPopularVIPLevel(),
+            ];
+        });
+    }
+
+    private function getCompletionRate(): float
+    {
+        $total = $this->investments()->count();
+        if ($total === 0) return 0;
+        $completed = $this->investments()->where('status', 'completed')->count();
+        return round(($completed / $total) * 100, 2);
+    }
+
+    private function getPopularVIPLevel(): int
+    {
+        $counts = [
+            1 => $this->investments()->where('vip_level', 1)->count(),
+            2 => $this->investments()->where('vip_level', 2)->count(),
+            3 => $this->investments()->where('vip_level', 3)->count(),
+        ];
+        return array_keys($counts, max($counts))[0] ?? 1;
+    }
+
+    // Relationships
+    public function investments() { return $this->hasMany(MachineInvestment::class); }
+    public function activeInvestments() { return $this->investments()->where('status', 'active'); }
+}
+
+═══════════════════════════════════════════════════════════════════
+2. APP/MODELS/MACHINEINVESTMENT.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+
+class MachineInvestment extends Model
+{
+    use HasFactory;
+
+    const STATUS_ACTIVE = 'active';
+    const STATUS_COMPLETED = 'completed';
+    const STATUS_CANCELLED = 'cancelled';
+
+    protected $table = 'machine_investments';
+
+    protected $fillable = [
+        'user_id', 'machine_id', 'vip_level', 'amount', 'daily_profit', 'total_return',
+        'start_date', 'end_date', 'status', 'profit_credited', 'last_profit_date'
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'daily_profit' => 'decimal:2',
+        'total_return' => 'decimal:2',
+        'profit_credited' => 'decimal:2',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'last_profit_date' => 'date',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', self::STATUS_COMPLETED);
+    }
+
+    public function isActive()
+    {
+        return $this->status === self::STATUS_ACTIVE && now()->lt($this->end_date);
+    }
+
+    public function isMatured()
+    {
+        return now()->gte($this->end_date) && $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function daysElapsed()
+    {
+        return now()->diffInDays($this->start_date);
+    }
+
+    public function daysRemaining()
+    {
+        if ($this->isMatured()) return 0;
+        return now()->diffInDays($this->end_date, false);
+    }
+
+    public function progressPercentage()
+    {
+        return round(($this->daysElapsed() / $this->machine->duration_days) * 100, 2);
+    }
+
+    public function currentProfit()
+    {
+        $daysElapsed = min($this->daysElapsed(), $this->machine->duration_days);
+        return $this->daily_profit * $daysElapsed;
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+3. APP/MODELS/WALLET.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Models;
+
+use App\Events\WalletBalanceUpdated;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Wallet extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['user_id', 'balance', 'locked_balance'];
+
+    protected $casts = [
+        'balance' => 'decimal:2',
+        'locked_balance' => 'decimal:2',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function credit($amount, $description, $type = 'credit')
+    {
+        return \DB::transaction(function () use ($amount, $description, $type) {
+            $this->increment('balance', $amount);
+            return $this->transactions()->create([
+                'type' => $type,
+                'amount' => $amount,
+                'balance_after' => $this->balance,
+                'description' => $description,
+            ]);
+        });
+    }
+
+    public function debit($amount, $description, $type = 'debit')
+    {
+        if ($this->balance < $amount) {
+            throw new \Exception('Insufficient balance');
+        }
+        return \DB::transaction(function () use ($amount, $description, $type) {
+            $this->decrement('balance', $amount);
+            return $this->transactions()->create([
+                'type' => $type,
+                'amount' => -$amount,
+                'balance_after' => $this->balance,
+                'description' => $description,
+            ]);
+        });
+    }
+
+    protected static function booted()
+    {
+        static::updated(function ($wallet) {
+            if ($wallet->isDirty('balance') || $wallet->isDirty('locked_balance')) {
+                broadcast(new WalletBalanceUpdated($wallet));
+            }
+        });
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+4. APP/MODELS/TRANSACTION.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Transaction extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id', 'wallet_id', 'type', 'amount',
+        'balance_after', 'description', 'reference',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'balance_after' => 'decimal:2',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+5. APP/HTTP/CONTROLLERS/MACHINECONTROLLER.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Machine;
+use App\Models\MachineInvestment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class MachineController extends Controller
+{
+    public function index()
+    {
+        $machines = Cache::remember('machines_active', 300, function () {
+            return Machine::where('is_active', true)->get();
+        });
+
+        $user = Auth::user();
+        $activeInvestments = $user->machineInvestments()
+            ->where('status', MachineInvestment::STATUS_ACTIVE)
+            ->with('machine')
+            ->get()
+            ->map(function ($inv) {
+                $inv->progress_percentage = $inv->progressPercentage();
+                $inv->days_remaining = $inv->daysRemaining();
+                return $inv;
+            });
+
+        $totalInvested = $activeInvestments->sum('amount');
+        $totalProjectedProfit = $activeInvestments->sum('total_return') - $totalInvested;
+        $totalEarnedProfit = $activeInvestments->sum('profit_credited');
+
+        return view('machines.index', compact(
+            'machines', 'activeInvestments', 'totalInvested', 
+            'totalProjectedProfit', 'totalEarnedProfit'
+        ));
+    }
+
+    public function show($code)
+    {
+        $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
+        $user = Auth::user();
+
+        $activeInvestment = $user->machineInvestments()
+            ->where('machine_id', $machine->id)
+            ->where('status', MachineInvestment::STATUS_ACTIVE)
+            ->first();
+            
+        if ($activeInvestment) {
+            $activeInvestment->progress_percentage = $activeInvestment->progressPercentage();
+            $activeInvestment->days_remaining = $activeInvestment->daysRemaining();
+            $activeInvestment->current_profit = $activeInvestment->currentProfit();
+        }
+
+        $investmentHistory = $user->machineInvestments()
+            ->where('machine_id', $machine->id)
+            ->where('status', MachineInvestment::STATUS_COMPLETED)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        $vipDetails = $machine->getVIPDetails();
+        $statistics = $machine->getStatistics();
+
+        return view('machines.show', compact(
+            'machine', 'activeInvestment', 'investmentHistory', 
+            'vipDetails', 'statistics'
+        ));
+    }
+
+    public function invest(Request $request, Machine $machine)
+    {
+        $request->validate([
+            'vip_level' => 'required|in:1,2,3',
+        ]);
+
+        $vipLevel = (int) $request->vip_level;
+        $amount = $machine->getStartAmountForVip($vipLevel);
+        $user = Auth::user();
+
+        // Check if user already has an active investment in this machine
+        $existing = $user->machineInvestments()
+            ->where('machine_id', $machine->id)
+            ->where('status', MachineInvestment::STATUS_ACTIVE)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active investment in this machine.'
+            ], 422);
+        }
+
+        // Check wallet balance
+        if ($user->wallet->balance < $amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient wallet balance. Please deposit funds.'
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($user, $machine, $amount, $vipLevel) {
+                // Debit wallet
+                $user->wallet->decrement('balance', $amount);
+                
+                // Record transaction
+                $user->transactions()->create([
+                    'type' => 'machine_investment',
+                    'amount' => -$amount,
+                    'status' => 'completed',
+                    'description' => "Investment in {$machine->name} - VIP {$vipLevel}",
+                    'balance_after' => $user->wallet->balance,
+                ]);
+
+                // Calculate returns
+                $dailyProfit = $machine->getDailyProfit($amount);
+                $totalReturn = $machine->getTotalReturn($amount);
+                $startDate = now();
+                $endDate = $startDate->copy()->addDays($machine->duration_days);
+
+                // Create investment record
+                MachineInvestment::create([
+                    'user_id' => $user->id,
+                    'machine_id' => $machine->id,
+                    'vip_level' => $vipLevel,
+                    'amount' => $amount,
+                    'daily_profit' => $dailyProfit,
+                    'total_return' => $totalReturn,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'status' => MachineInvestment::STATUS_ACTIVE,
+                    'profit_credited' => 0,
+                ]);
+            });
+
+            // Clear caches
+            Cache::forget('machines_active');
+            Cache::forget('dashboard_' . $user->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Investment successful! Your daily profit will start accruing tomorrow.',
+                'data' => [
+                    'amount' => $amount,
+                    'daily_profit' => $dailyProfit,
+                    'total_return' => $totalReturn,
+                    'end_date' => $endDate->format('Y-m-d'),
+                ],
+                'redirect' => route('machines.show', $machine->code)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Investment failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Investment failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function status(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $investment->id,
+                'amount' => $investment->amount,
+                'daily_profit' => $investment->daily_profit,
+                'current_profit' => $investment->currentProfit(),
+                'total_return' => $investment->total_return,
+                'profit_credited' => $investment->profit_credited,
+                'start_date' => $investment->start_date->format('Y-m-d'),
+                'end_date' => $investment->end_date->format('Y-m-d'),
+                'days_elapsed' => $investment->daysElapsed(),
+                'days_remaining' => $investment->daysRemaining(),
+                'progress_percentage' => $investment->progressPercentage(),
+                'status' => $investment->status,
+            ]
+        ]);
+    }
+
+    public function myInvestments()
+    {
+        $user = Auth::user();
+        
+        $investments = MachineInvestment::where('user_id', $user->id)
+            ->with('machine')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'machine_name' => $inv->machine->name,
+                    'machine_code' => $inv->machine->code,
+                    'vip_level' => $inv->vip_level,
+                    'amount' => $inv->amount,
+                    'daily_profit' => $inv->daily_profit,
+                    'total_return' => $inv->total_return,
+                    'profit_credited' => $inv->profit_credited,
+                    'status' => $inv->status,
+                    'start_date' => $inv->start_date->format('Y-m-d'),
+                    'end_date' => $inv->end_date->format('Y-m-d'),
+                    'progress' => $inv->progressPercentage(),
+                    'days_remaining' => $inv->daysRemaining(),
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $investments
+        ]);
+    }
+}
+
+    /**
+     * Get global machine statistics (AJAX)
+     */
+    public function globalStats()
+    {
+        $machines = Machine::where('is_active', true)->get();
+        
+        $stats = [
+            'total_machines' => $machines->count(),
+            'total_invested' => $machines->sum(function ($m) {
+                return $m->investments()->sum('amount');
+            }),
+            'active_investments' => $machines->sum(function ($m) {
+                return $m->activeInvestments()->count();
+            }),
+            'total_investors' => MachineInvestment::distinct('user_id')->count('user_id'),
+        ];
+        
+        return response()->json(['success' => true, 'data' => $stats]);
+    }
+
+    /**
+     * Get machine statistics (AJAX)
+     */
+    public function machineStats(Machine $machine)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $machine->getStatistics()
+        ]);
+    }
+
+    /**
+     * Public statistics (no auth required)
+     */
+    public function publicStats()
+    {
+        $machines = Machine::where('is_active', true)->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'machines' => $machines->map(function ($m) {
+                    return [
+                        'code' => $m->code,
+                        'name' => $m->name,
+                        'risk_profile' => $m->risk_profile,
+                        'vip1_amount' => $m->getVIPAmounts()[1],
+                        'growth_rate' => $m->growth_rate,
+                    ];
+                }),
+                'total_invested' => $machines->sum(function ($m) {
+                    return $m->investments()->sum('amount');
+                }),
+            ]
+        ]);
+    }
+
+    /**
+     * Early withdrawal from machine investment
+     */
+    public function earlyWithdraw(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        if (!$investment->isActive()) {
+            return response()->json(['error' => 'Investment is not active'], 422);
+        }
+        
+        $penaltyRate = $investment->machine->early_withdrawal_penalty ?? 20;
+        $refundAmount = $investment->amount * (1 - $penaltyRate / 100);
+        
+        try {
+            DB::transaction(function () use ($investment, $refundAmount, $penaltyRate) {
+                // Refund to wallet
+                $investment->user->wallet->increment('balance', $refundAmount);
+                
+                // Record transaction
+                $investment->user->transactions()->create([
+                    'type' => 'machine_early_withdrawal',
+                    'amount' => $refundAmount,
+                    'status' => 'completed',
+                    'description' => "Early withdrawal from {$investment->machine->name} (Penalty: {$penaltyRate}%)",
+                    'balance_after' => $investment->user->wallet->balance,
+                ]);
+                
+                // Update investment status
+                $investment->status = 'cancelled';
+                $investment->save();
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Early withdrawal processed. Refund: KES " . number_format($refundAmount, 2),
+                'refund_amount' => $refundAmount,
+                'penalty' => $penaltyRate,
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Withdrawal failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+═══════════════════════════════════════════════════════════════════
+6. APP/HTTP/CONTROLLERS/API/MACHINECONTROLLER.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Machine;
+use App\Models\MachineInvestment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class MachineController extends Controller
+{
+    /**
+     * Get all active machines (authenticated)
+     */
+    public function index()
+    {
+        $machines = Cache::remember('api_machines_all', 300, function () {
+            return Machine::where('is_active', true)->get()->map(function ($machine) {
+                return $this->formatMachineData($machine);
+            });
+        });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $machines,
+            'meta' => [
+                'total' => $machines->count(),
+                'version' => 'v1',
+                'timestamp' => now(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get public machine list (no auth required)
+     */
+    public function publicList()
+    {
+        $machines = Machine::where('is_active', true)->get()->map(function ($machine) {
+            return [
+                'code' => $machine->code,
+                'name' => $machine->name,
+                'description' => $machine->description,
+                'risk_profile' => $machine->risk_profile,
+                'duration_days' => $machine->duration_days,
+                'growth_rate' => $machine->growth_rate,
+                'icon' => $machine->icon,
+                'vip1_amount' => $machine->getVIPAmounts()[1],
+                'daily_profit_vip1' => $machine->getDailyProfit($machine->getVIPAmounts()[1]),
+                'total_return_vip1' => $machine->getTotalReturn($machine->getVIPAmounts()[1]),
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $machines,
+            'message' => 'Public machine listing'
+        ]);
+    }
+
+    /**
+     * Get single machine details
+     */
+    public function show($code)
+    {
+        $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $this->formatMachineData($machine, true),
+        ]);
+    }
+
+    /**
+     * Get public machine details (no auth)
+     */
+    public function publicShow($code)
+    {
+        $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'code' => $machine->code,
+                'name' => $machine->name,
+                'description' => $machine->description,
+                'risk_profile' => $machine->risk_profile,
+                'duration_days' => $machine->duration_days,
+                'growth_rate' => $machine->growth_rate,
+                'vip_tiers' => array_values($machine->getVIPDetails()),
+                'statistics' => $machine->getStatistics(),
+            ]
+        ]);
+    }
+
+    /**
+     * Invest in a machine
+     */
+    public function invest(Request $request, Machine $machine)
+    {
+        $request->validate([
+            'vip_level' => 'required|in:1,2,3,4,5,6',
+        ]);
+
+        $vipLevel = (int) $request->vip_level;
+        $amount = $machine->getVIPAmounts()[$vipLevel] ?? null;
+        
+        if (!$amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid VIP level selected'
+            ], 422);
+        }
+        
+        $user = Auth::user();
+
+        // Check existing active investment
+        $existing = MachineInvestment::where('user_id', $user->id)
+            ->where('machine_id', $machine->id)
+            ->where('status', 'active')
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active investment in this machine'
+            ], 422);
+        }
+
+        // Check wallet balance
+        if ($user->wallet->balance < $amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient wallet balance. Required: KES ' . number_format($amount, 2)
+            ], 422);
+        }
+
+        // Check machine capacity
+        if (!$machine->canAcceptInvestment($amount)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This machine has reached its investment limit'
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($user, $machine, $amount, $vipLevel) {
+                // Debit wallet
+                $user->wallet->decrement('balance', $amount);
+                
+                // Record transaction
+                $user->transactions()->create([
+                    'type' => 'machine_investment',
+                    'amount' => -$amount,
+                    'status' => 'completed',
+                    'description' => "Investment in {$machine->name} - VIP {$vipLevel}",
+                    'balance_after' => $user->wallet->balance,
+                ]);
+
+                // Calculate returns
+                $dailyProfit = $machine->getDailyProfit($amount, $vipLevel);
+                $totalReturn = $machine->getTotalReturn($amount, $vipLevel);
+                
+                // Create investment record
+                $investment = MachineInvestment::create([
+                    'user_id' => $user->id,
+                    'machine_id' => $machine->id,
+                    'vip_level' => $vipLevel,
+                    'amount' => $amount,
+                    'daily_profit' => $dailyProfit,
+                    'total_return' => $totalReturn,
+                    'start_date' => now(),
+                    'end_date' => now()->addDays($machine->duration_days),
+                    'status' => 'active',
+                    'profit_credited' => 0,
+                ]);
+            });
+
+            // Clear caches
+            Cache::forget('api_machines_all');
+            Cache::forget("api_machine_{$machine->code}");
+            Cache::forget('dashboard_' . $user->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Investment successful! Daily profits will start accruing tomorrow.',
+                'data' => [
+                    'investment_id' => $investment->id ?? null,
+                    'amount' => $amount,
+                    'daily_profit' => $dailyProfit,
+                    'total_return' => $totalReturn,
+                    'end_date' => now()->addDays($machine->duration_days)->format('Y-m-d'),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Machine investment failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Investment failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user's all machine investments
+     */
+    public function myInvestments(Request $request)
+    {
+        $user = Auth::user();
+        
+        $query = MachineInvestment::where('user_id', $user->id)->with('machine');
+        
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $investments = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $investments->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'machine_name' => $inv->machine->name,
+                    'machine_code' => $inv->machine->code,
+                    'vip_level' => $inv->vip_level,
+                    'amount' => $inv->amount,
+                    'daily_profit' => $inv->daily_profit,
+                    'total_return' => $inv->total_return,
+                    'profit_credited' => $inv->profit_credited,
+                    'current_profit' => $inv->currentProfit(),
+                    'progress' => $inv->progressPercentage(),
+                    'days_elapsed' => $inv->daysElapsed(),
+                    'days_remaining' => $inv->daysRemaining(),
+                    'start_date' => $inv->start_date->format('Y-m-d'),
+                    'end_date' => $inv->end_date->format('Y-m-d'),
+                    'status' => $inv->status,
+                ];
+            }),
+            'meta' => [
+                'total_invested' => $investments->sum('amount'),
+                'total_profit_earned' => $investments->sum('profit_credited'),
+                'total_projected' => $investments->sum('total_return'),
+            ]
+        ]);
+    }
+
+    /**
+     * Get active investments only
+     */
+    public function activeInvestments()
+    {
+        $user = Auth::user();
+        
+        $investments = MachineInvestment::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->with('machine')
+            ->get()
+            ->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'machine_name' => $inv->machine->name,
+                    'vip_level' => $inv->vip_level,
+                    'amount' => $inv->amount,
+                    'daily_profit' => $inv->daily_profit,
+                    'progress' => $inv->progressPercentage(),
+                    'days_remaining' => $inv->daysRemaining(),
+                    'end_date' => $inv->end_date->format('Y-m-d'),
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $investments,
+            'total_active' => $investments->count(),
+            'total_invested' => $investments->sum('amount'),
+        ]);
+    }
+
+    /**
+     * Get investment details
+     */
+    public function investmentDetails(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $investment->id,
+                'machine' => [
+                    'name' => $investment->machine->name,
+                    'code' => $investment->machine->code,
+                    'description' => $investment->machine->description,
+                ],
+                'vip_level' => $investment->vip_level,
+                'amount' => $investment->amount,
+                'daily_profit' => $investment->daily_profit,
+                'total_return' => $investment->total_return,
+                'profit_credited' => $investment->profit_credited,
+                'current_profit' => $investment->currentProfit(),
+                'remaining_profit' => $investment->total_return - $investment->amount - $investment->profit_credited,
+                'start_date' => $investment->start_date->format('Y-m-d'),
+                'end_date' => $investment->end_date->format('Y-m-d'),
+                'days_elapsed' => $investment->daysElapsed(),
+                'days_remaining' => $investment->daysRemaining(),
+                'progress_percentage' => $investment->progressPercentage(),
+                'status' => $investment->status,
+                'can_withdraw' => $investment->isActive(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get global machine statistics
+     */
+    public function globalStats()
+    {
+        $stats = Cache::remember('api_machines_global_stats', 300, function () {
+            $machines = Machine::where('is_active', true)->get();
+            
+            $totalInvested = $machines->sum(function ($m) {
+                return $m->investments()->sum('amount');
+            });
+            
+            $totalPaidOut = $machines->sum(function ($m) {
+                return $m->investments()->sum('total_return');
+            });
+            
+            $activeInvestments = $machines->sum(function ($m) {
+                return $m->activeInvestments()->count();
+            });
+            
+            $totalInvestors = MachineInvestment::distinct('user_id')->count('user_id');
+            
+            return [
+                'total_machines' => $machines->count(),
+                'total_invested' => $totalInvested,
+                'total_paid_out' => $totalPaidOut,
+                'total_profit' => $totalPaidOut - $totalInvested,
+                'active_investments' => $activeInvestments,
+                'total_investors' => $totalInvestors,
+                'avg_roi' => $machines->avg('growth_rate'),
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $stats,
+        ]);
+    }
+
+    /**
+     * Calculate returns (investment calculator)
+     */
+    public function calculateReturns(Request $request)
+    {
+        $request->validate([
+            'machine_code' => 'required|string|exists:machines,code',
+            'vip_level' => 'required|in:1,2,3,4,5,6',
+        ]);
+        
+        $machine = Machine::where('code', $request->machine_code)->first();
+        $amount = $machine->getVIPAmounts()[$request->vip_level];
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'machine' => $machine->name,
+                'vip_level' => $request->vip_level,
+                'investment_amount' => $amount,
+                'daily_profit' => $machine->getDailyProfit($amount, $request->vip_level),
+                'total_return' => $machine->getTotalReturn($amount, $request->vip_level),
+                'total_profit' => $machine->getTotalReturn($amount, $request->vip_level) - $amount,
+                'duration_days' => $machine->duration_days,
+                'roi_percentage' => $machine->growth_rate,
+                'apy' => round((pow(1 + $machine->getDailyProfit($amount, $request->vip_level) / $amount, 365) - 1) * 100, 2),
+            ]
+        ]);
+    }
+
+    /**
+     * Format machine data for API response
+     */
+    private function formatMachineData(Machine $machine, $includeDetails = false)
+    {
+        $user = Auth::user();
+        
+        $data = [
+            'id' => $machine->id,
+            'code' => $machine->code,
+            'name' => $machine->name,
+            'description' => $machine->description,
+            'risk_profile' => $machine->risk_profile,
+            'duration_days' => $machine->duration_days,
+            'growth_rate' => $machine->growth_rate,
+            'icon' => $machine->icon,
+            'color' => $machine->color,
+            'vip_tiers' => array_values($machine->getVIPDetails()),
+            'statistics' => $machine->getStatistics(),
+        ];
+        
+        if ($includeDetails && $user) {
+            $data['user_investment'] = MachineInvestment::where('user_id', $user->id)
+                ->where('machine_id', $machine->id)
+                ->where('status', 'active')
+                ->first();
+        }
+        
+        return $data;
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+7. CONFIG/APP.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+return [
+    'name' => env('APP_NAME', 'Racksephnox'),
+    'env' => env('APP_ENV', 'production'),
+    'debug' => (bool) env('APP_DEBUG', false),
+    'url' => env('APP_URL', 'https://racksephnox.up.railway.app'),
+    'timezone' => 'Africa/Nairobi',
+    'locale' => 'en',
+    'fallback_locale' => 'en',
+    'faker_locale' => 'en_US',
+    'key' => env('APP_KEY'),
+    'cipher' => 'AES-256-CBC',
+    'providers' => [
+        // Laravel Framework Service Providers
+        Illuminate\Auth\AuthServiceProvider::class,
+        Illuminate\Broadcasting\BroadcastServiceProvider::class,
+        Illuminate\Bus\BusServiceProvider::class,
+        Illuminate\Cache\CacheServiceProvider::class,
+        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+        Illuminate\Cookie\CookieServiceProvider::class,
+        Illuminate\Database\DatabaseServiceProvider::class,
+        Illuminate\Encryption\EncryptionServiceProvider::class,
+        Illuminate\Filesystem\FilesystemServiceProvider::class,
+        Illuminate\Foundation\Providers\FoundationServiceProvider::class,
+        Illuminate\Hashing\HashServiceProvider::class,
+        Illuminate\Mail\MailServiceProvider::class,
+        Illuminate\Notifications\NotificationServiceProvider::class,
+        Illuminate\Pagination\PaginationServiceProvider::class,
+        Illuminate\Pipeline\PipelineServiceProvider::class,
+        Illuminate\Queue\QueueServiceProvider::class,
+        Illuminate\Redis\RedisServiceProvider::class,
+        Illuminate\Auth\Passwords\PasswordResetServiceProvider::class,
+        Illuminate\Session\SessionServiceProvider::class,
+        Illuminate\Translation\TranslationServiceProvider::class,
+        Illuminate\Validation\ValidationServiceProvider::class,
+        Illuminate\View\ViewServiceProvider::class,
+
+        // Package Service Providers
+        Laravel\Sanctum\SanctumServiceProvider::class,
+        Sentry\Laravel\ServiceProvider::class,
+        Laravel\Reverb\ReverbServiceProvider::class,
+
+        // Application Service Providers
+        App\Providers\AppServiceProvider::class,
+        App\Providers\AuthServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
+        App\Providers\RouteServiceProvider::class,
+        App\Providers\ViewServiceProvider::class,
+        App\Providers\PerformanceServiceProvider::class,
+    ],
+    'aliases' => [
+        'App' => Illuminate\Support\Facades\App::class,
+        'Artisan' => Illuminate\Support\Facades\Artisan::class,
+        'Auth' => Illuminate\Support\Facades\Auth::class,
+        'Blade' => Illuminate\Support\Facades\Blade::class,
+        'Broadcast' => Illuminate\Support\Facades\Broadcast::class,
+        'Bus' => Illuminate\Support\Facades\Bus::class,
+        'Cache' => Illuminate\Support\Facades\Cache::class,
+        'Config' => Illuminate\Support\Facades\Config::class,
+        'Cookie' => Illuminate\Support\Facades\Cookie::class,
+        'Crypt' => Illuminate\Support\Facades\Crypt::class,
+        'DB' => Illuminate\Support\Facades\DB::class,
+        'Eloquent' => Illuminate\Database\Eloquent\Model::class,
+        'Event' => Illuminate\Support\Facades\Event::class,
+        'File' => Illuminate\Support\Facades\File::class,
+        'Gate' => Illuminate\Support\Facades\Gate::class,
+        'Hash' => Illuminate\Support\Facades\Hash::class,
+        'Http' => Illuminate\Support\Facades\Http::class,
+        'Lang' => Illuminate\Support\Facades\Lang::class,
+        'Log' => Illuminate\Support\Facades\Log::class,
+        'Mail' => Illuminate\Support\Facades\Mail::class,
+        'Notification' => Illuminate\Support\Facades\Notification::class,
+        'Password' => Illuminate\Support\Facades\Password::class,
+        'Queue' => Illuminate\Support\Facades\Queue::class,
+        'RateLimiter' => Illuminate\Support\Facades\RateLimiter::class,
+        'Redirect' => Illuminate\Support\Facades\Redirect::class,
+        'Request' => Illuminate\Support\Facades\Request::class,
+        'Response' => Illuminate\Support\Facades\Response::class,
+        'Route' => Illuminate\Support\Facades\Route::class,
+        'Schema' => Illuminate\Support\Facades\Schema::class,
+        'Session' => Illuminate\Support\Facades\Session::class,
+        'Storage' => Illuminate\Support\Facades\Storage::class,
+        'Str' => Illuminate\Support\Str::class,
+        'URL' => Illuminate\Support\Facades\URL::class,
+        'Validator' => Illuminate\Support\Facades\Validator::class,
+        'View' => Illuminate\Support\Facades\View::class,
+    ],
+];
+
+═══════════════════════════════════════════════════════════════════
+8. CONFIG/CACHE.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use Illuminate\Support\Str;
+
+return [
+    'default' => env('CACHE_DRIVER', 'file'),
+    'stores' => [
+        'apc' => ['driver' => 'apc'],
+        'array' => ['driver' => 'array', 'serialize' => false],
+        'database' => [
+            'driver' => 'database',
+            'table' => 'cache',
+            'connection' => null,
+            'lock_connection' => null,
+        ],
+        'file' => [
+            'driver' => 'file',
+            'path' => storage_path('framework/cache/data'),
+            'lock_path' => storage_path('framework/cache/data'),
+        ],
+        'memcached' => [
+            'driver' => 'memcached',
+            'persistent_id' => env('MEMCACHED_PERSISTENT_ID'),
+            'sasl' => [
+                env('MEMCACHED_USERNAME'),
+                env('MEMCACHED_PASSWORD'),
+            ],
+            'options' => [
+                // Memcached::OPT_CONNECT_TIMEOUT => 2000,
+            ],
+            'servers' => [
+                [
+                    'host' => env('MEMCACHED_HOST', '127.0.0.1'),
+                    'port' => env('MEMCACHED_PORT', 11211),
+                    'weight' => 100,
+                ],
+            ],
+        ],
+        'redis' => [
+            'driver' => 'redis',
+            'connection' => 'cache',
+            'lock_connection' => 'default',
+        ],
+        'octane' => [
+            'driver' => 'octane',
+        ],
+    ],
+    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
+];
+
+═══════════════════════════════════════════════════════════════════
+9. ROUTES/WEB.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvestmentWebController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\KycController;
+use App\Http\Controllers\MpesaController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\TradingController;
+use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\DepositController;
+use App\Http\Controllers\WithdrawalController;
+use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\GuideController;
+use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\InvestmentPlanController;
+use App\Http\Controllers\Admin\KycController as AdminKycController;
+use App\Http\Controllers\Admin\DepositVerificationController;
+use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingsController;
+use Illuminate\Support\Facades\Route;
+
+// Public routes
+Route::get('/', function () { return view('welcome'); })->name('home');
+Route::get('/lang/{locale}', [LanguageController::class, 'switch'])->name('lang.switch');
+Route::get('/guide', [GuideController::class, 'index'])->name('guide');
+Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpesa.callback');
+
+// Legal Pages
+Route::controller(App\Http\Controllers\LegalPagesController::class)->group(function () {
+    Route::get('/terms', 'terms')->name('terms');
+    Route::get('/privacy', 'privacy')->name('privacy');
+    Route::get('/cookies', 'cookies')->name('cookies');
+    Route::get('/compliance', 'compliance')->name('compliance');
+});
+
+// Authenticated routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/investments', [InvestmentWebController::class, 'index'])->name('web.investments');
+    Route::post('/investments', [InvestmentWebController::class, 'store'])->name('web.investments.store');
+    Route::post('/investments/{investment}/early-withdraw', [InvestmentWebController::class, 'earlyWithdraw'])->name('web.investments.early-withdraw');
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet');
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/export', [TransactionController::class, 'exportCsv'])->name('transactions.export');
+    Route::get('/kyc', [KycController::class, 'index'])->name('kyc');
+    Route::post('/kyc/upload', [KycController::class, 'upload'])->name('kyc.upload');
+    Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals');
+    Route::get('/refer/{code}', [ReferralController::class, 'show'])->name('referral.show');
+    Route::get('/deposit', [DepositController::class, 'showForm'])->name('deposit.form');
+    Route::post('/deposit/submit', [DepositController::class, 'submitRequest'])->name('deposit.submit');
+    Route::get('/withdrawal', [WithdrawalController::class, 'showForm'])->name('withdrawal.form');
+    Route::post('/withdrawal/submit', [WithdrawalController::class, 'submitRequest'])->name('withdrawal.submit');
+    Route::resource('bank-accounts', BankAccountController::class);
+    
+    // Profile routes (ONLY ONCE)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // M-Pesa
+    Route::prefix('mpesa')->name('mpesa.')->group(function () {
+        Route::get('/deposit', [MpesaController::class, 'showDepositForm'])->name('deposit');
+        Route::post('/deposit', [MpesaController::class, 'initiateDeposit'])->name('deposit.initiate');
+        Route::get('/withdraw', [MpesaController::class, 'showWithdrawalForm'])->name('withdraw');
+        Route::post('/withdraw', [MpesaController::class, 'initiateWithdrawal'])->name('withdraw.initiate');
+    });
+    
+    // Machines
+    Route::prefix('machines')->name('machines.')->group(function () {
+        Route::get('/', [MachineController::class, 'index'])->name('index');
+        Route::get('/{code}', [MachineController::class, 'show'])->name('show');
+        Route::post('/{machine}/invest', [MachineController::class, 'invest'])->name('invest');
+        Route::get('/investment/{investment}/status', [MachineController::class, 'status'])->name('status');
+        Route::get('/my-investments', [MachineController::class, 'myInvestments'])->name('my-investments');
+    });
+    
+    // Trading
+    Route::prefix('trading')->name('trading.')->group(function () {
+        Route::get('/', [TradingController::class, 'index'])->name('index');
+        Route::post('/transfer', [TradingController::class, 'transfer'])->name('transfer');
+        Route::post('/cancel/{order}', [TradingController::class, 'cancelOrder'])->name('cancel');
+    });
+    
+    // Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('markAsRead');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead'])->name('markAllRead');
+    });
+});
+
+// Admin routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::resource('users', UserController::class);
+    Route::resource('plans', InvestmentPlanController::class);
+    Route::get('kyc', [AdminKycController::class, 'index'])->name('kyc.index');
+    Route::get('kyc/{document}', [AdminKycController::class, 'show'])->name('kyc.show');
+    Route::post('kyc/{document}/approve', [AdminKycController::class, 'approve'])->name('kyc.approve');
+    Route::post('kyc/{document}/reject', [AdminKycController::class, 'reject'])->name('kyc.reject');
+    Route::prefix('deposits')->name('deposits.')->group(function () {
+        Route::get('/', [DepositVerificationController::class, 'index'])->name('index');
+        Route::post('/{deposit}/verify', [DepositVerificationController::class, 'verify'])->name('verify');
+        Route::post('/{deposit}/reject', [DepositVerificationController::class, 'reject'])->name('reject');
+    });
+    Route::prefix('withdrawals')->name('withdrawals.')->group(function () {
+        Route::get('/', [AdminWithdrawalController::class, 'index'])->name('index');
+        Route::post('/{withdrawal}/process', [AdminWithdrawalController::class, 'process'])->name('process');
+        Route::post('/{withdrawal}/complete', [AdminWithdrawalController::class, 'complete'])->name('complete');
+        Route::post('/{withdrawal}/reject', [AdminWithdrawalController::class, 'reject'])->name('reject');
+    });
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/export/users', [ReportController::class, 'exportUsers'])->name('export.users');
+        Route::get('/export/transactions', [ReportController::class, 'exportTransactions'])->name('export.transactions');
+        Route::get('/export/investments', [ReportController::class, 'exportInvestments'])->name('export.investments');
+        Route::get('/export/trading', [ReportController::class, 'exportTrading'])->name('export.trading');
+        Route::get('/export/pdf', [ReportController::class, 'exportPdfReport'])->name('export.pdf');
+    });
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('index');
+        Route::post('/update', [SettingsController::class, 'update'])->name('update');
+        Route::post('/maintenance', [SettingsController::class, 'toggleMaintenance'])->name('maintenance');
+    });
+});
+
+// Include Breeze authentication routes
+require __DIR__.'/auth.php';
+
+═══════════════════════════════════════════════════════════════════
+10. ROUTES/API.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InvestmentController;
+use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\MpesaController;
+use App\Http\Controllers\Api\KycController;
+use App\Http\Controllers\Api\TradingController;
+use App\Http\Controllers\Api\DepositController;
+use App\Http\Controllers\Api\WithdrawalController;
+use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\Api\CryptoController;
+use App\Http\Controllers\Api\MachineController;
+use App\Http\Controllers\Api\NotificationController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes (Version 1)
+|--------------------------------------------------------------------------
+| Base URL: /api/v1
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('v1')->group(function () {
+    
+    // ==============================================
+    // PUBLIC ROUTES (No authentication required)
+    // ==============================================
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('api.mpesa.callback');
+    Route::get('/crypto/prices', [CryptoController::class, 'prices'])->name('api.crypto.prices');
+    Route::get('/investment-plans', [InvestmentController::class, 'plans']);
+    Route::get('/machine/list', [MachineController::class, 'list']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+    // ==============================================
+    // PROTECTED ROUTES (Requires authentication)
+    // ==============================================
+    Route::middleware('auth:sanctum')->group(function () {
+        
+        // ------------------------------------------
+        // AUTHENTICATION & USER MANAGEMENT
+        // ------------------------------------------
+        Route::get('/user', [AuthController::class, 'user']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/user/password', [AuthController::class, 'updatePassword']);
+        Route::delete('/user/account', [AuthController::class, 'deleteAccount']);
+        
+        // ------------------------------------------
+        // WALLET MANAGEMENT
+        // ------------------------------------------
+        Route::prefix('wallet')->group(function () {
+            Route::get('/balance', [WalletController::class, 'balance']);
+            Route::get('/transactions', [WalletController::class, 'transactions']);
+            Route::post('/transfer', [WalletController::class, 'transfer']);
+            Route::get('/summary', [WalletController::class, 'summary']);
+        });
+        
+        // ------------------------------------------
+        // INVESTMENTS
+        // ------------------------------------------
+        Route::prefix('investments')->group(function () {
+            Route::get('/', [InvestmentController::class, 'index']);
+            Route::post('/', [InvestmentController::class, 'store']);
+            Route::get('/{id}', [InvestmentController::class, 'show']);
+            Route::post('/{id}/withdraw', [InvestmentController::class, 'earlyWithdraw']);
+            Route::get('/plan/{plan}/daily-profit', [InvestmentController::class, 'dailyProfit']);
+            Route::get('/stats', [InvestmentController::class, 'stats']);
+        });
+        
+        // ------------------------------------------
+        // TRADING
+        // ------------------------------------------
+        Route::prefix('trading')->group(function () {
+            Route::get('/balance', [TradingController::class, 'balance']);
+            Route::get('/price', [TradingController::class, 'price']);
+            Route::post('/buy', [TradingController::class, 'buy']);
+            Route::post('/sell', [TradingController::class, 'sell']);
+            Route::get('/orders', [TradingController::class, 'orders']);
+            Route::get('/history', [TradingController::class, 'history']);
+            Route::post('/order/{id}/cancel', [TradingController::class, 'cancelOrder']);
+        });
+        
+        // ------------------------------------------
+        // MACHINES (Investment Plans)
+        // ------------------------------------------
+        Route::prefix('machines')->group(function () {
+            Route::get('/', [MachineController::class, 'index']);
+            Route::get('/{code}', [MachineController::class, 'show']);
+            Route::post('/{machine}/invest', [MachineController::class, 'invest']);
+            Route::get('/{investment}/status', [MachineController::class, 'status']);
+        });
+        
+        // ------------------------------------------
+        // KYC (Know Your Customer)
+        // ------------------------------------------
+        Route::prefix('kyc')->group(function () {
+            Route::get('/status', [KycController::class, 'status']);
+            Route::post('/upload', [KycController::class, 'upload']);
+            Route::post('/verify-id', [KycController::class, 'verifyId']);
+            Route::get('/documents', [KycController::class, 'documents']);
+            Route::delete('/document/{id}', [KycController::class, 'deleteDocument']);
+        });
+        
+        // ------------------------------------------
+        // DEPOSITS
+        // ------------------------------------------
+        Route::prefix('deposit')->group(function () {
+            Route::get('/pochi-number', [DepositController::class, 'getPochiNumber']);
+            Route::post('/submit', [DepositController::class, 'submitRequest']);
+            Route::get('/history', [DepositController::class, 'history']);
+            Route::get('/status/{id}', [DepositController::class, 'status']);
+            Route::post('/verify', [DepositController::class, 'verifyPayment']);
+        });
+        
+        // ------------------------------------------
+        // WITHDRAWALS
+        // ------------------------------------------
+        Route::prefix('withdrawal')->group(function () {
+            Route::post('/submit', [WithdrawalController::class, 'submitRequest']);
+            Route::get('/history', [WithdrawalController::class, 'history']);
+            Route::get('/status/{id}', [WithdrawalController::class, 'status']);
+            Route::post('/bank-account', [WithdrawalController::class, 'addBankAccount']);
+            Route::delete('/bank-account/{id}', [WithdrawalController::class, 'removeBankAccount']);
+        });
+        
+        // ------------------------------------------
+        // TRANSACTIONS
+        // ------------------------------------------
+        Route::prefix('transactions')->group(function () {
+            Route::get('/', [TransactionController::class, 'index']);
+            Route::get('/export', [TransactionController::class, 'export']);
+            Route::get('/summary', [TransactionController::class, 'summary']);
+            Route::get('/types', [TransactionController::class, 'types']);
+        });
+        
+        // ------------------------------------------
+        // REFERRALS
+        // ------------------------------------------
+        Route::prefix('referrals')->group(function () {
+            Route::get('/stats', [ReferralController::class, 'stats']);
+            Route::get('/list', [ReferralController::class, 'list']);
+            Route::get('/bonuses', [ReferralController::class, 'bonuses']);
+            Route::get('/link', [ReferralController::class, 'getLink']);
+        });
+        
+        // ------------------------------------------
+        // CRYPTO
+        // ------------------------------------------
+        Route::prefix('crypto')->group(function () {
+            Route::get('/prices', [CryptoController::class, 'prices']);
+            Route::get('/history', [CryptoController::class, 'history']);
+            Route::get('/market', [CryptoController::class, 'marketData']);
+        });
+        
+        // ------------------------------------------
+        // NOTIFICATIONS
+        // ------------------------------------------
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index']);
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
+            Route::delete('/{id}', [NotificationController::class, 'destroy']);
+            Route::delete('/', [NotificationController::class, 'destroyAll']);
+            Route::get('/preferences', [NotificationController::class, 'preferences']);
+            Route::post('/preferences', [NotificationController::class, 'updatePreferences']);
+        });
+        
+        // ------------------------------------------
+        // DASHBOARD STATS
+        // ------------------------------------------
+        Route::get('/dashboard/stats', function (Request $request) {
+            $user = $request->user();
+            return response()->json([
+                'wallet_balance' => $user->wallet->balance ?? 0,
+                'total_invested' => $user->investments()->sum('amount'),
+                'active_investments' => $user->investments()->where('status', 'active')->count(),
+                'total_profit' => $user->transactions()->where('type', 'interest')->sum('amount'),
+                'total_referrals' => $user->referrals()->count(),
+                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+            ]);
+        });
+        
+        // ------------------------------------------
+        // REFERRAL STATS (Quick endpoint)
+        // ------------------------------------------
+        Route::get('/referral-stats', function (Request $request) {
+            $user = $request->user();
+            return response()->json([
+                'total_referrals' => $user->referrals()->count(),
+                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+                'referral_link' => url('/refer/' . $user->referral_code),
+            ]);
+        });
+        
+        // ------------------------------------------
+        // CRYPTO PRICES (Quick endpoint)
+        // ------------------------------------------
+        Route::get('/crypto-prices', function () {
+            $prices = \App\Models\CryptoPrice::latest()->take(5)->get();
+            return response()->json($prices);
+        });
+    });
+});
+
+// ==============================================
+// HEALTH CHECK ENDPOINT
+// ==============================================
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'timestamp' => now(),
+        'app_name' => config('app.name'),
+        'version' => '1.0.0'
+    ]);
+});
+
+// ==============================================
+// API VERSION INFO
+// ==============================================
+Route::get('/v1/info', function () {
+    return response()->json([
+        'version' => '1.0.0',
+        'name' => 'Racksephnox Crypto API',
+        'description' => 'Divine Golden Spirit API',
+        'endpoints' => [
+            'auth' => '/v1/login, /v1/register, /v1/logout',
+            'wallet' => '/v1/wallet/*',
+            'investments' => '/v1/investments/*',
+            'trading' => '/v1/trading/*',
+            'kyc' => '/v1/kyc/*',
+            'deposit' => '/v1/deposit/*',
+            'withdrawal' => '/v1/withdrawal/*',
+        ]
+    ]);
+});
+
+// ==============================================
+// ADDITIONAL API ROUTES (for dashboard widgets)
+// ==============================================
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Wallet balance (used by dashboard refresh)
+    Route::get('/wallet', function (Request $request) {
+        return response()->json([
+            'balance' => $request->user()->wallet->balance ?? 0,
+            'currency' => 'KES'
+        ]);
+    })->name('api.wallet');
+
+    // Referral stats (used by referralWidget)
+    Route::get('/referral-stats', function (Request $request) {
+        $user = $request->user();
+        return response()->json([
+            'total_referrals' => $user->referrals()->count(),
+            'total_bonus'      => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+        ]);
+    })->name('api.referral-stats');
+
+    // Crypto prices (used by cryptoWidget)
+    Route::get('/crypto-prices', function () {
+        $prices = \App\Models\CryptoPrice::latest()->take(5)->get();
+        return response()->json($prices);
+    })->name('api.crypto-prices');
+
+    // Trading price (used by BTC price ticker)
+    Route::get('/trading/price', function () {
+        $btc = \App\Models\CryptoPrice::where('symbol', 'BTC')->latest()->first();
+        return response()->json([
+            'price_kes' => $btc->price_kes ?? 0,
+            'symbol'    => 'BTC'
+        ]);
+    })->name('api.trading.price');
+
+    // Notifications unread count
+    Route::get('/notifications/unread-count', function (Request $request) {
+        return response()->json(['count' => $request->user()->unreadNotifications->count()]);
+    })->name('api.notifications.unread');
+});
+
+// ==============================================
+// API endpoints used by dashboard widgets
+// ==============================================
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Wallet balance (refresh button)
+    Route::get('/wallet', function (Request $request) {
+        return response()->json([
+            'balance' => $request->user()->wallet->balance ?? 0,
+        ]);
+    })->name('api.wallet');
+
+    // Referral stats (referral widget)
+    Route::get('/referral-stats', function (Request $request) {
+        $user = $request->user();
+        return response()->json([
+            'total_referrals' => $user->referrals()->count(),
+            'total_bonus'     => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+        ]);
+    })->name('api.referral-stats');
+
+    // Crypto prices (crypto widget)
+    Route::get('/crypto-prices', function () {
+        return response()->json(\App\Models\CryptoPrice::latest()->take(5)->get());
+    })->name('api.crypto-prices');
+
+    // BTC price (trading widget)
+    Route::get('/trading/price', function () {
+        $btc = \App\Models\CryptoPrice::where('symbol', 'BTC')->latest()->first();
+        return response()->json(['price_kes' => $btc->price_kes ?? 0]);
+    })->name('api.trading.price');
+
+    // Unread notifications count (bell icon)
+    Route::get('/notifications/unread-count', function (Request $request) {
+        return response()->json(['count' => $request->user()->unreadNotifications->count()]);
+    });
+});
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/enterprise/machines', [App\Http\Controllers\Api\EnterpriseMachineController::class, 'index']);
+    Route::get('/enterprise/machines/{code}', [App\Http\Controllers\Api\EnterpriseMachineController::class, 'show']);
+});
+
+═══════════════════════════════════════════════════════════════════
+11. ROUTES/AUTH.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('verify-email', [EmailVerificationPromptController::class, '__invoke'])->name('verification.notice');
+    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])->middleware('throttle:6,1')->name('verification.send');
+    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
+
+═══════════════════════════════════════════════════════════════════
+12. RESOURCES/VIEWS/LAYOUTS/APP.BLADE.PHP
+═══════════════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ config('app.name', 'Racksephnox') }} – Divine Golden Cryptocurrency Platform</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <script>
+        window.themeManager = {
+            currentTheme: localStorage.getItem('theme') || 'light',
+            toggleTheme: function() {
+                const themes = ['light', 'dark', 'cosmic', 'abundance', 'golden'];
+                let next = (themes.indexOf(this.currentTheme) + 1) % themes.length;
+                this.currentTheme = themes[next];
+                document.documentElement.classList.remove(...themes);
+                document.documentElement.classList.add(this.currentTheme);
+                localStorage.setItem('theme', this.currentTheme);
+            }
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            document.documentElement.classList.add(themeManager.currentTheme);
+        });
+    </script>
+</head>
+<body class="font-sans antialiased bg-cosmic-void text-ivory">
+    <div class="min-h-screen relative z-10">
+        <nav class="nav-golden fixed w-full top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="shrink-0 flex items-center">
+                            <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
+                                <img src="{{ asset('img/logo-racksephnox.svg') }}" alt="Racksephnox" class="h-10 w-auto">
+                                <span class="text-xl font-bold golden-title hidden sm:inline">Racksephnox</span>
+                            </a>
+                        </div>
+                        <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                            @auth
+                                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="nav-link-golden">
+                                    <i class="fas fa-chart-line mr-1"></i> Dashboard
+                                </x-nav-link>
+                                <x-nav-link :href="route('web.investments')" :active="request()->routeIs('web.investments*')" class="nav-link-golden">
+                                    <i class="fas fa-chart-simple mr-1"></i> Investments
+                                </x-nav-link>
+                                <x-nav-link :href="route('wallet')" :active="request()->routeIs('wallet')" class="nav-link-golden">
+                                    <i class="fas fa-wallet mr-1"></i> Wallet
+                                </x-nav-link>
+                                <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')" class="nav-link-golden">
+                                    <i class="fas fa-exchange-alt mr-1"></i> Transactions
+                                </x-nav-link>
+                                <x-nav-link :href="route('kyc')" :active="request()->routeIs('kyc')" class="nav-link-golden">
+                                    <i class="fas fa-id-card mr-1"></i> KYC
+                                </x-nav-link>
+                                <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="nav-link-golden">
+                                    <i class="fas fa-microchip mr-1"></i> Machines
+                                </x-nav-link>
+                                <x-nav-link :href="route('trading.index')" :active="request()->routeIs('trading.*')" class="nav-link-golden">
+                                    <i class="fab fa-bitcoin mr-1"></i> Trading
+                                </x-nav-link>
+                                <x-nav-link :href="route('referrals')" :active="request()->routeIs('referrals')" class="nav-link-golden">
+                                    <i class="fas fa-users mr-1"></i> Referrals
+                                </x-nav-link>
+                                <x-nav-link :href="route('deposit.form')" :active="request()->routeIs('deposit.*')" class="nav-link-golden">
+                                    <i class="fas fa-arrow-down mr-1"></i> Deposit
+                                </x-nav-link>
+                                <x-nav-link :href="route('withdrawal.form')" :active="request()->routeIs('withdrawal.*')" class="nav-link-golden">
+                                    <i class="fas fa-arrow-up mr-1"></i> Withdraw
+                                </x-nav-link>
+                                <x-nav-link :href="route('bank-accounts.index')" :active="request()->routeIs('bank-accounts.*')" class="nav-link-golden">
+                                    <i class="fas fa-university mr-1"></i> Bank Accounts
+                                </x-nav-link>
+                                <x-nav-link :href="route('guide')" class="nav-link-golden">
+                                    <i class="fas fa-book-open mr-1"></i> Guide
+                                </x-nav-link>
+                            @endauth
+                        </div>
+                    </div>
+                    <div class="hidden sm:flex sm:items-center sm:ml-6">
+                        @auth
+                            <!-- Notifications Bell -->
+                            <div class="relative mr-3" x-data="{ open: false }">
+                                <button @click="open = !open" class="relative p-2 rounded-full hover:bg-gold/10 transition">
+                                    <i class="fas fa-bell text-gold-400 text-lg"></i>
+                                    @if(isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                        <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-gold-600 rounded-full transform translate-x-1/2 -translate-y-1/2">
+                                            {{ $unreadNotificationsCount }}
+                                        </span>
+                                    @endif
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-80 bg-cosmic-deep/95 backdrop-blur-md rounded-2xl shadow-golden border border-gold/30 z-20">
+                                    <div class="p-3 border-b border-gold/30 font-semibold text-gold">Notifications</div>
+                                    <div class="max-h-96 overflow-y-auto">
+                                        @if(isset($latestNotifications) && $latestNotifications->count())
+                                            @foreach($latestNotifications as $notification)
+                                                <div class="p-3 border-b border-gold/20 hover:bg-gold/5 transition {{ $notification->read_at ? '' : 'bg-gold/5' }}">
+                                                    <p class="text-sm">{{ $notification->data['message'] ?? 'You have a new notification' }}</p>
+                                                    <p class="text-xs text-gold-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                                </div>
+                                            @endforeach
+                                            <div class="p-2 text-center border-t border-gold/30">
+                                                <a href="{{ route('notifications.markAllRead') }}" class="text-xs text-gold hover:text-gold-300">Mark all as read</a>
+                                            </div>
+                                        @else
+                                            <div class="p-3 text-center text-gold-400">No notifications</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Dropdown -->
+                            <x-dropdown align="right" width="48">
+                                <x-slot name="trigger">
+                                    <button class="inline-flex items-center px-3 py-2 border border-gold/30 rounded-full text-sm leading-4 font-medium text-ivory bg-cosmic-deep/50 hover:bg-gold/10 transition">
+                                        <i class="fas fa-user-circle mr-2 text-gold"></i>
+                                        <div>{{ Auth::user()->name }}</div>
+                                        <div class="ml-1">
+                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </x-slot>
+                                <x-slot name="content">
+                                    <x-dropdown-link :href="route('profile.edit')" class="hover:bg-gold/10">
+                                        <i class="fas fa-user mr-2 text-gold"></i> Profile
+                                    </x-dropdown-link>
+                                    @if(auth()->user()->is_admin)
+                                        <x-dropdown-link :href="route('admin.dashboard')" class="hover:bg-gold/10">
+                                            <i class="fas fa-tachometer-alt mr-2 text-gold"></i> Admin Dashboard
+                                        </x-dropdown-link>
+                                    @endif
+                                    <x-dropdown-link href="#" onclick="themeManager.toggleTheme(); return false;" class="hover:bg-gold/10">
+                                        <i class="fas fa-palette mr-2 text-gold"></i> Switch Theme
+                                    </x-dropdown-link>
+                                    <x-dropdown-link href="{{ route('lang.switch', 'en') }}" class="hover:bg-gold/10">
+                                        🇬🇧 English
+                                    </x-dropdown-link>
+                                    <x-dropdown-link href="{{ route('lang.switch', 'sw') }}" class="hover:bg-gold/10">
+                                        🇰🇪 Kiswahili
+                                    </x-dropdown-link>
+                                    <x-dropdown-link href="{{ route('lang.switch', 'fr') }}" class="hover:bg-gold/10">
+                                        🇫🇷 Français
+                                    </x-dropdown-link>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <x-dropdown-link :href="route('logout')"
+                                                onclick="event.preventDefault(); this.closest('form').submit();"
+                                                class="hover:bg-gold/10">
+                                            <i class="fas fa-sign-out-alt mr-2 text-gold"></i> Log Out
+                                        </x-dropdown-link>
+                                    </form>
+                                </x-slot>
+                            </x-dropdown>
+                        @else
+                            <div class="flex items-center space-x-4">
+                                <a href="{{ route('login') }}" class="text-ivory hover:text-gold transition">
+                                    <i class="fas fa-sign-in-alt mr-1"></i> Login
+                                </a>
+                                <a href="{{ route('register') }}" class="btn-golden">
+                                    <i class="fas fa-user-plus mr-1"></i> Get Started
+                                </a>
+                                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gold/10">
+                                    <i class="fas fa-palette text-gold"></i>
+                                </button>
+                            </div>
+                        @endauth
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="pt-16">
+            @yield('content')
+        </main>
+    </div>
+
+    <!-- Sacred Footer -->
+    <footer class="border-t border-gold/20 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm text-gold-400 sacred-phrase">I Am The Source | Divine Golden Phi | Infinite Spiral of Creation</p>
+            <p class="text-xs text-gold-500/60 mt-2">Guardian and Protector | Law of Information | Racksephnox</p>
+        </div>
+    </footer>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+</html>
+
+═══════════════════════════════════════════════════════════════════
+13. RESOURCES/VIEWS/LAYOUTS/NAVIGATION.BLADE.PHP
+═══════════════════════════════════════════════════════════════════
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+    <!-- Primary Navigation Menu -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <!-- Logo -->
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('dashboard') }}">
+                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
+            <!-- Settings Dropdown -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                            <div>{{ Auth::user()->name }}</div>
+
+                            <div class="ms-1">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <!-- Authentication -->
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Log Out') }}
+                            </x-dropdown-link>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
+            </div>
+
+            <!-- Hamburger -->
+            <div class="-me-2 flex items-center sm:hidden">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsive Navigation Menu -->
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+        </div>
+
+        <!-- Responsive Settings Options -->
+        <div class="pt-4 pb-1 border-t border-gray-200">
+            <div class="px-4">
+                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+            </div>
+
+            <div class="mt-3 space-y-1">
+                <x-responsive-nav-link :href="route('profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+
+                <!-- Authentication -->
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+
+                    <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault();
+                                        this.closest('form').submit();">
+                        {{ __('Log Out') }}
+                    </x-responsive-nav-link>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+═══════════════════════════════════════════════════════════════════
+14. RESOURCES/VIEWS/MACHINES/INDEX.BLADE.PHP
+═══════════════════════════════════════════════════════════════════
+@extends('layouts.app')
+
+@section('content')
+<div x-data="rxMachinesManager()" x-init="init()" class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Global Hero -->
+        <div class="text-center mb-16">
+            <div class="inline-block">
+                <div class="w-24 h-24 bg-gradient-to-r from-gold-400 via-amber-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-2xl">
+                    <i class="fas fa-infinity text-4xl text-white"></i>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold golden-title shimmer-gold">RX Machine Series</h1>
+                <p class="text-gold-400 mt-4 text-lg">6 Sacred Portals • 3 VIP Levels • Golden Ratio Φ • Up to 35% ROI</p>
+                <p class="text-sm text-ivory/50 mt-2">Trusted by investors in 🇰🇪 Kenya • 🇺🇸 USA • 🇬🇧 UK • 🇦🇪 UAE • 🇮🇳 India • 🇿🇦 South Africa</p>
+            </div>
+        </div>
+
+        <!-- Global Stats Widget -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <i class="fas fa-microchip text-3xl text-gold mb-2"></i>
+                <p class="text-2xl font-bold text-gold">6</p>
+                <p class="text-xs text-ivory/60">RX Machines</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <i class="fas fa-chart-line text-3xl text-gold mb-2"></i>
+                <p class="text-2xl font-bold text-gold">3</p>
+                <p class="text-xs text-ivory/60">VIP Levels</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <i class="fas fa-coins text-3xl text-gold mb-2"></i>
+                <p class="text-2xl font-bold text-green-400">35%</p>
+                <p class="text-xs text-ivory/60">Max ROI</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <i class="fas fa-clock text-3xl text-gold mb-2"></i>
+                <p class="text-2xl font-bold text-gold">14</p>
+                <p class="text-xs text-ivory/60">Days Cycle</p>
+            </div>
+        </div>
+
+        <!-- RX Machines Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            @foreach($machines as $machine)
+            @php
+                $vips = $machine->getVIPDetails();
+                $stats = $machine->getStatistics();
+            @endphp
+            <div class="card-golden p-6 group hover:scale-105 transition-all duration-300 border-t-4 border-gold/50">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <div class="w-20 h-20 bg-gradient-to-r {{ $machine->color }} rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                        <i class="fas {{ $machine->icon ?? 'fa-microchip' }} text-3xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold golden-title">{{ $machine->name }}</h2>
+                    <p class="text-xs text-ivory/60 mt-1">{{ $machine->duration_days }}‑day cycle • {{ $machine->growth_rate }}% ROI</p>
+                    <p class="text-xs mt-1 px-2 py-0.5 inline-block rounded-full bg-gold/20 text-gold">{{ $machine->risk_profile }} Risk</p>
+                </div>
+
+                <!-- VIP Tiers -->
+                <div class="space-y-3">
+                    @foreach([1, 2, 3] as $level)
+                    @php $vip = $vips[$level]; @endphp
+                    <div class="bg-cosmic-deep/50 rounded-xl p-3 border border-gold/20 hover:border-gold/50 transition cursor-pointer" onclick="window.dispatchEvent(new CustomEvent('select-invest', { detail: { machine_id: {{ $machine->id }}, vip_level: {{ $level }}, amount: {{ $vip['amount'] }} } }))">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-gold text-lg">VIP {{ $level }}</span>
+                                <span class="text-xs text-ivory/50 ml-1">Φ{{ $vip['phi_power'] }}</span>
+                            </div>
+                            <span class="text-xl font-bold text-gold">KES {{ number_format($vip['amount'], 0) }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs mt-2">
+                            <span class="text-ivory/60">Daily: <span class="text-green-400">KES {{ number_format($vip['daily_profit'], 2) }}</span></span>
+                            <span class="text-ivory/60">Total: <span class="text-gold">KES {{ number_format($vip['total_return'], 0) }}</span></span>
+                            <span class="text-ivory/60">Profit: <span class="text-green-400">KES {{ number_format($vip['total_profit'], 0) }}</span></span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                <!-- Stats Footer -->
+                <div class="mt-5 pt-3 border-t border-gold/20 flex justify-between text-xs">
+                    <span class="text-ivory/50"><i class="fas fa-users mr-1"></i> {{ $stats['total_investors'] }} investors</span>
+                    <span class="text-ivory/50"><i class="fas fa-coins mr-1"></i> KES {{ number_format($stats['total_invested'] / 1000, 0) }}K</span>
+                    <a href="{{ route('machines.show', $machine->code) }}" class="text-gold-400 hover:text-gold">Details →</a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <!-- Sacred Footer -->
+        <div class="text-center mt-16 pt-8 border-t border-gold/20">
+            <p class="text-xs text-gold-400/60">I Am The Source | Divine Golden Phi | Infinite Spiral of Creation | 888 Hz</p>
+            <p class="text-xs text-gold-500/40 mt-1">Racksephnox – Global Crypto Investment Platform</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function rxMachinesManager() {
+    return {
+        init() {
+            window.addEventListener('select-invest', (e) => {
+                if (confirm(`✨ Invest KES ${e.detail.amount.toLocaleString()} in VIP ${e.detail.vip_level}?`)) {
+                    fetch(`/machines/${e.detail.machine_id}/invest`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ vip_level: e.detail.vip_level })
+                    }).then(res => res.json()).then(data => {
+                        alert(data.message || (data.success ? '✅ Investment successful!' : '❌ Failed'));
+                        if (data.success) location.reload();
+                    }).catch(err => alert('Error: ' + err.message));
+                }
+            });
+        }
+    }
+}
+</script>
+@endsection
+
+═══════════════════════════════════════════════════════════════════
+15. RESOURCES/VIEWS/MACHINES/SHOW.BLADE.PHP
+═══════════════════════════════════════════════════════════════════
+@extends('layouts.app')
+
+@section('content')
+<div x-data="machineShowManager()" x-init="init()" class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Back Button -->
+        <a href="{{ route('machines.index') }}" class="inline-flex items-center text-gold-400 hover:text-gold mb-6 transition group">
+            <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition"></i> Back to Machines
+        </a>
+
+        <!-- Machine Header -->
+        <div class="card-golden p-8 mb-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gold/5 rounded-full blur-2xl"></div>
+            <div class="w-24 h-24 bg-gradient-to-r from-gold-400 to-gold-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <i class="fas fa-microchip text-4xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-bold golden-title">{{ $machine->name }}</h1>
+            <p class="text-gold-400 mt-2">{{ $machine->description ?? $machine->duration_days }}-day sacred cycle with {{ $machine->growth_rate }}% guaranteed return</p>
+            <div class="flex justify-center gap-3 mt-4">
+                <span class="px-3 py-1 bg-gold/20 rounded-full text-xs text-gold"><i class="fas fa-calendar mr-1"></i> {{ $machine->duration_days }} Days</span>
+                <span class="px-3 py-1 bg-gold/20 rounded-full text-xs text-gold"><i class="fas fa-chart-line mr-1"></i> {{ $machine->growth_rate }}% ROI</span>
+                <span class="px-3 py-1 bg-gold/20 rounded-full text-xs text-gold"><i class="fas fa-infinity mr-1"></i> Φ Golden Ratio</span>
+            </div>
+        </div>
+
+        <!-- Active Investment Display -->
+        @if($activeInvestment)
+        <div class="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/50 rounded-2xl p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-green-400 flex items-center gap-2">
+                    <i class="fas fa-check-circle animate-pulse"></i> Your Active Investment
+                </h2>
+                <span class="text-xs text-green-400/70">{{ $activeInvestment->days_remaining }} days remaining</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-ivory/60 text-sm">VIP Level</p>
+                    <p class="text-2xl font-bold text-gold">VIP {{ $activeInvestment->vip_level }} <span class="text-sm">Φ{{ str_repeat('¹', $activeInvestment->vip_level) }}</span></p>
+                </div>
+                <div>
+                    <p class="text-ivory/60 text-sm">Amount</p>
+                    <p class="text-2xl font-bold text-gold">KES {{ number_format($activeInvestment->amount, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-ivory/60 text-sm">Daily Profit</p>
+                    <p class="text-2xl font-bold text-green-400">KES {{ number_format($activeInvestment->daily_profit, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-ivory/60 text-sm">Maturity Date</p>
+                    <p class="text-2xl font-bold text-gold">{{ $activeInvestment->end_date->format('d M Y') }}</p>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-ivory/60">Progress</span>
+                    <span class="text-gold">{{ $activeInvestment->progress_percentage }}%</span>
+                </div>
+                <div class="w-full bg-gold/20 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $activeInvestment->progress_percentage }}%"></div>
+                </div>
+                <div class="flex justify-between text-xs mt-2">
+                    <span class="text-ivory/50">Started: {{ $activeInvestment->start_date->format('d M Y') }}</span>
+                    <span class="text-green-400">Earned: KES {{ number_format($activeInvestment->profit_credited ?? 0, 2) }}</span>
+                    <span class="text-gold-400">Target: KES {{ number_format($activeInvestment->total_return, 2) }}</span>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- VIP Level Selection -->
+        @if(!$activeInvestment)
+        <div class="card-golden p-6">
+            <h2 class="text-2xl font-bold text-gold mb-6 text-center">Choose Your VIP Portal</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @foreach($vipDetails as $level => $vip)
+                <div class="border-2 border-gold/30 rounded-2xl p-6 text-center cursor-pointer hover:border-gold transition-all group hover:scale-105" 
+                     @click="invest({{ $level }}, {{ $vip['amount'] }})">
+                    <div class="w-16 h-16 bg-gradient-to-r from-gold-400/20 to-gold-600/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-crown text-2xl text-gold"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gold">VIP {{ $level }}</h3>
+                    <p class="text-xs text-ivory/50 mb-2">Φ{{ $vip['phi_power'] }}</p>
+                    <p class="text-3xl font-bold text-gold mt-2">KES {{ number_format($vip['amount'], 2) }}</p>
+                    <div class="mt-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-ivory/60">Daily profit:</span>
+                            <span class="text-green-400 font-semibold">KES {{ number_format($vip['daily_profit'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-ivory/60">Total return:</span>
+                            <span class="text-gold font-semibold">KES {{ number_format($vip['total_return'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-ivory/60">Total profit:</span>
+                            <span class="text-green-400 font-semibold">KES {{ number_format($vip['total_profit'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-ivory/60">Daily rate:</span>
+                            <span class="text-gold">{{ $vip['daily_rate'] }}%</span>
+                        </div>
+                    </div>
+                    <button class="mt-6 btn-golden w-full py-3">
+                        <i class="fas fa-gem mr-2"></i> Invest Now
+                    </button>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        <!-- Investment Statistics Widget -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div class="card-golden p-4 text-center">
+                <i class="fas fa-users text-2xl text-gold mb-2"></i>
+                <p class="text-ivory/60 text-sm">Total Investors</p>
+                <p class="text-2xl font-bold text-gold">{{ $statistics['total_users'] }}</p>
+            </div>
+            <div class="card-golden p-4 text-center">
+                <i class="fas fa-coins text-2xl text-gold mb-2"></i>
+                <p class="text-ivory/60 text-sm">Total Invested</p>
+                <p class="text-2xl font-bold text-gold">KES {{ number_format($statistics['total_invested'], 2) }}</p>
+            </div>
+            <div class="card-golden p-4 text-center">
+                <i class="fas fa-chart-line text-2xl text-gold mb-2"></i>
+                <p class="text-ivory/60 text-sm">Active Investments</p>
+                <p class="text-2xl font-bold text-gold">{{ $statistics['active_investments'] }}</p>
+            </div>
+        </div>
+
+        <!-- Investment History -->
+        @if($investmentHistory->count())
+        <div class="card-golden p-6 mt-8">
+            <h2 class="text-xl font-bold text-gold mb-4 flex items-center gap-2">
+                <i class="fas fa-history"></i> Your Investment History
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="border-b border-gold/30">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">VIP</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">Daily Profit</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">Total Return</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gold uppercase">Date</th>
+                        </thead>
+                    <tbody class="divide-y divide-gold/20">
+                        @foreach($investmentHistory as $inv)
+                        <tr class="hover:bg-gold/5 transition">
+                            <td class="px-4 py-3">
+                                <span class="font-semibold text-gold">VIP {{ $inv->vip_level }}</span>
+                                <span class="text-xs text-ivory/50 ml-1">Φ{{ str_repeat('¹', $inv->vip_level) }}</span>
+                            </td>
+                            <td class="px-4 py-3 text-gold">KES {{ number_format($inv->amount, 2) }}</td>
+                            <td class="px-4 py-3 text-green-400">KES {{ number_format($inv->daily_profit, 2) }}</td>
+                            <td class="px-4 py-3 text-gold">KES {{ number_format($inv->total_return, 2) }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
+                                    <i class="fas fa-check-circle mr-1"></i> {{ ucfirst($inv->status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-ivory/60">{{ $inv->created_at->format('Y-m-d') }}</td>
+                          </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        <!-- Sacred Footer -->
+        <div class="text-center mt-10 pt-6 border-t border-gold/20">
+            <p class="text-xs text-gold-400/60 sacred-phrase">Divine Eternal Universal Frequencies | Guardian and Protector | 888 Hz</p>
+            <p class="text-xs text-gold-500/40 mt-1">Racksephnox – Infinite Spiral of Creation</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function machineShowManager() {
+    return {
+        loading: false,
+        
+        async invest(vipLevel, amount) {
+            if (!confirm(`✨ Invest KES ${amount.toLocaleString()} in VIP ${vipLevel}?\n\n📈 Daily profit: ${(vipLevel === 1 ? '1.78%' : vipLevel === 2 ? '2.14%' : '2.57%')}\n💰 Total return: ${vipLevel === 1 ? '125%' : vipLevel === 2 ? '130%' : '136%'} of investment\n⏱️ Duration: 14 days\n\nDaily profit will be credited automatically to your wallet.`)) {
+                return;
+            }
+            
+            this.loading = true;
+            
+            try {
+                const response = await fetch('{{ route('machines.invest', $machine) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ vip_level: vipLevel })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || 'Investment failed');
+                }
+                
+                alert('✅ Investment successful!\n\n' + data.message);
+                window.location.reload();
+                
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        init() {
+            // Add animation on load
+            const elements = document.querySelectorAll('.card-golden, .border-gold');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s ease-out';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+        }
+    }
+}
+</script>
+@endsection
+
+═══════════════════════════════════════════════════════════════════
+16. RESOURCES/CSS/APP.CSS
+═══════════════════════════════════════════════════════════════════
+/* ========================================
+   Racksephnox – Divine Infinite Source Golden Spiral
+   Prismatic Silver-Gold Cosmic Theme
+   ======================================== */
+
+@import './themes.css';
+@import './golden-spirit.css';
+@import './cosmic-particles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+body {
+    background: radial-gradient(ellipse at 30% 40%, #0a0f1e 0%, #03050a 100%);
+    color: #f0f0f0;
+    font-family: 'Figtree', 'Inter', system-ui, sans-serif;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Prismatic Silver-Gold Shimmer Overlay */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle at 70% 30%, rgba(192, 192, 192, 0.03), transparent 70%);
+    z-index: -1;
+}
+
+/* Golden Spiral Overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'%3E%3Cpath fill='none' stroke='rgba(212,175,55,0.04)' stroke-width='2' d='M500,500 L500,500' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100%;
+    z-index: -1;
+}
+
+/* Silver-Gold Gradients */
+.bg-silver-gold {
+    background: linear-gradient(135deg, #e0e0e0, #D4AF37, #B8860B);
+}
+.bg-cosmic-gold {
+    background: radial-gradient(circle at 30% 50%, rgba(212, 175, 55, 0.12), transparent 80%);
+}
+.bg-silver-mist {
+    background: radial-gradient(circle at 70% 20%, rgba(192, 192, 192, 0.05), transparent 70%);
+}
+
+/* Cards – Frosted Glass with Silver-Gold Border */
+.card-golden {
+    background: rgba(10, 20, 35, 0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px rgba(212, 175, 55, 0.15);
+    transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+.card-golden:hover {
+    border-color: rgba(212, 175, 55, 0.7);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 25px rgba(212, 175, 55, 0.3);
+    transform: translateY(-4px);
+}
+
+/* Buttons – Silver-Gold Gradient */
+.btn-golden {
+    background: linear-gradient(135deg, #D4AF37, #B8860B);
+    color: #0a0f1e;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.btn-golden::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.4), transparent);
+    transition: left 0.5s ease;
+}
+.btn-golden:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
+}
+.btn-golden:hover::before {
+    left: 100%;
+}
+.btn-outline-silver {
+    background: transparent;
+    border: 1px solid #D4AF37;
+    color: #D4AF37;
+}
+.btn-outline-silver:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #FFD700;
+    color: #FFD700;
+}
+
+/* Navigation – Glass with Silver Accent */
+.nav-golden {
+    background: rgba(5, 10, 20, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+}
+.nav-link-golden {
+    color: #f0f0f0;
+    transition: color 0.3s ease;
+    position: relative;
+}
+.nav-link-golden::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #D4AF37, #FFD700);
+    transition: width 0.3s ease;
+}
+.nav-link-golden:hover::after,
+.nav-link-golden.active::after {
+    width: 100%;
+}
+.nav-link-golden:hover,
+.nav-link-golden.active {
+    color: #FFD700;
+}
+
+/* Headings – Prismatic Silver-Gold */
+h1, .golden-title {
+    background: linear-gradient(135deg, #FFD700, #D4AF37, #C0C0C0, #D4AF37);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+/* Stats Cards */
+.stat-card {
+    background: rgba(5, 15, 25, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 24px;
+    transition: all 0.3s ease;
+}
+.stat-card:hover {
+    border-color: rgba(212, 175, 55, 0.6);
+    transform: translateY(-4px);
+    background: rgba(5, 15, 25, 0.8);
+}
+.stat-value {
+    background: linear-gradient(135deg, #FFD700, #D4AF37);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+/* Input Fields – Silver Glow */
+.input-golden {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 14px;
+    color: #f0f0f0;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+}
+.input-golden:focus {
+    border-color: #D4AF37;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    outline: none;
+}
+
+/* Quick Navigation Icons */
+.quick-nav-item {
+    transition: all 0.3s ease;
+    background: rgba(212, 175, 55, 0.08);
+    border-radius: 20px;
+}
+.quick-nav-item:hover {
+    background: rgba(212, 175, 55, 0.2);
+    transform: translateY(-3px);
+}
+
+/* Silver Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #050a12;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #D4AF37, #B8860B);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #FFD700;
+}
+
+/* Sacred Phrase */
+.sacred-phrase {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    background: linear-gradient(135deg, #D4AF37, #FFD700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+    letter-spacing: 1px;
+}
+
+/* Animated Elements */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.shimmer-gold {
+    background: linear-gradient(90deg, 
+        rgba(212, 175, 55, 0) 0%,
+        rgba(212, 175, 55, 0.6) 50%,
+        rgba(212, 175, 55, 0) 100%);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer 3s infinite;
+}
+
+/* Spiral Ornament */
+.spiral-ornament {
+    position: relative;
+}
+.spiral-ornament::after {
+    content: '∞';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #FFD700, #C0C0C0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 1.5em;
+    opacity: 0.6;
+}
+
+═══════════════════════════════════════════════════════════════════
+17. RESOURCES/JS/APP.JS
+═══════════════════════════════════════════════════════════════════
+import './bootstrap';
+
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+
+Alpine.start();
+
+═══════════════════════════════════════════════════════════════════
+18. MACHINES TABLE MIGRATION
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('machine_vips', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('machine_vips');
+    }
+};
+
+═══════════════════════════════════════════════════════════════════
+19. MACHINE INVESTMENTS TABLE MIGRATION
+═══════════════════════════════════════════════════════════════════
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        Schema::create('machine_investments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('machine_id')->constrained('machines')->onDelete('cascade');
+            $table->integer('vip_level'); // 1, 2, 3
+            $table->decimal('amount', 15, 2);
+            $table->decimal('daily_profit', 15, 2);
+            $table->decimal('total_return', 15, 2);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->enum('status', ['active', 'completed', 'cancelled'])->default('active');
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('machine_investments');
+    }
+};
+
+═══════════════════════════════════════════════════════════════════
+20. DATABASE/SEEDERS/RXMACHINESEEDER.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Machine;
+use Illuminate\Database\Seeder;
+
+class RXMachineSeeder extends Seeder
+{
+    public function run()
+    {
+        $phi = Machine::PHI;
+        
+        $machines = [
+            [
+                'code' => 'RX1',
+                'name' => 'RX1 – Aurora Machine',
+                'description' => 'Entry‑level divine portal, perfect for first‑time investors. Low risk, steady returns.',
+                'vip1_start_amount' => 5300,
+                'duration_days' => 14,
+                'growth_rate' => 25.0,
+                'risk_profile' => 'Low',
+                'icon' => 'fa-feather-alt',
+                'color' => 'from-blue-400 to-cyan-400',
+                'min_daily_profit' => 94.64,
+                'max_daily_profit' => 247.77,
+                'referral_bonus_rate' => 5.0,
+                'early_withdrawal_penalty' => 10.0,
+                'features' => ['Instant daily profit', 'Low risk', 'Beginner friendly']
+            ],
+            [
+                'code' => 'RX2',
+                'name' => 'RX2 – Nova Machine',
+                'description' => 'Intermediate growth portal. Balanced risk with amplified returns.',
+                'vip1_start_amount' => 11000,
+                'duration_days' => 14,
+                'growth_rate' => 26.0,
+                'risk_profile' => 'Low‑Medium',
+                'icon' => 'fa-star',
+                'color' => 'from-green-400 to-emerald-400',
+                'referral_bonus_rate' => 5.5,
+                'early_withdrawal_penalty' => 12.0,
+                'features' => ['Balanced risk', 'Higher returns', 'VIP benefits']
+            ],
+            [
+                'code' => 'RX3',
+                'name' => 'RX3 – Prism Machine',
+                'description' => 'Advanced high‑yield portal. Medium risk with exceptional gains.',
+                'vip1_start_amount' => 22000,
+                'duration_days' => 14,
+                'growth_rate' => 27.0,
+                'risk_profile' => 'Medium',
+                'icon' => 'fa-gem',
+                'color' => 'from-purple-400 to-pink-400',
+                'referral_bonus_rate' => 6.0,
+                'early_withdrawal_penalty' => 15.0,
+                'features' => ['High yield', 'Medium risk', 'Advanced analytics']
+            ],
+            [
+                'code' => 'RX4',
+                'name' => 'RX4 – Eclipse Machine',
+                'description' => 'Premium wealth portal. Medium‑high risk for experienced investors.',
+                'vip1_start_amount' => 53000,
+                'duration_days' => 14,
+                'growth_rate' => 28.0,
+                'risk_profile' => 'Medium‑High',
+                'icon' => 'fa-moon',
+                'color' => 'from-indigo-400 to-purple-400',
+                'referral_bonus_rate' => 6.5,
+                'early_withdrawal_penalty' => 18.0,
+                'features' => ['Premium returns', 'Wealth acceleration', 'Priority support']
+            ],
+            [
+                'code' => 'RX5',
+                'name' => 'RX5 – Quantum Machine',
+                'description' => 'Elite high‑frequency portal. High risk, exponential returns.',
+                'vip1_start_amount' => 110000,
+                'duration_days' => 14,
+                'growth_rate' => 30.0,
+                'risk_profile' => 'High',
+                'icon' => 'fa-atom',
+                'color' => 'from-orange-400 to-red-400',
+                'referral_bonus_rate' => 7.0,
+                'early_withdrawal_penalty' => 20.0,
+                'features' => ['Exponential growth', 'High risk high reward', 'VIP support']
+            ],
+            [
+                'code' => 'RX6',
+                'name' => 'RX6 – Infinity Machine',
+                'description' => 'The ultimate sacred investment portal. Very high risk, divine returns.',
+                'vip1_start_amount' => 220000,
+                'duration_days' => 14,
+                'growth_rate' => 35.0,
+                'risk_profile' => 'Very High',
+                'icon' => 'fa-infinity',
+                'color' => 'from-amber-400 to-yellow-400',
+                'referral_bonus_rate' => 8.0,
+                'early_withdrawal_penalty' => 25.0,
+                'features' => ['Maximum returns', 'Divine algorithm', 'Exclusive access']
+            ],
+        ];
+
+        foreach ($machines as $data) {
+            Machine::updateOrCreate(['code' => $data['code']], $data);
+        }
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+21. APP/CONSOLE/COMMANDS/ACCRUEMACHINEPROFITS.PHP
+═══════════════════════════════════════════════════════════════════
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\MachineInvestment;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+
+class AccrueMachineProfits extends Command
+{
+    protected $signature = 'machines:accrue-profits';
+    protected $description = 'Accrue daily profits for all active machine investments';
+
+    public function handle()
+    {
+        $this->info('Starting daily profit accrual...');
+        
+        $investments = MachineInvestment::where('status', 'active')
+            ->whereDate('end_date', '>=', now())
+            ->get();
+        
+        $totalAccrued = 0;
+        $count = 0;
+        
+        foreach ($investments as $investment) {
+            $accrued = $investment->accrueDailyProfit();
+            if ($accrued) {
+                $totalAccrued += $accrued;
+                $count++;
+                $this->line("Accrued KES " . number_format($accrued, 2) . " for investment #{$investment->id}");
+            }
+        }
+        
+        $this->info("Completed! Accrued KES " . number_format($totalAccrued, 2) . " for {$count} investments.");
+        
+        Log::info("Machine profits accrued", [
+            'count' => $count,
+            'total' => $totalAccrued
+        ]);
+        
+        return Command::SUCCESS;
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+22. APP/CONSOLE/KERNEL.PHP (Schedule section)
+═══════════════════════════════════════════════════════════════════
+    protected function schedule(Schedule $schedule): void
+    {
+        // Run heavy tasks at low traffic times
+        $schedule->command('investments:accrue')->dailyAt('00:00')->withoutOverlapping();
+        $schedule->command('machines:accrue')->dailyAt('00:05')->withoutOverlapping();
+        $schedule->command('crypto:sync-prices')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('btc:record-price')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('trading:match-orders')->everyMinute()->withoutOverlapping();
+    }
+
+    protected function commands(): void
+    {
+        $this->load(__DIR__.'/Commands');
+        require base_path('routes/console.php');
+    }
+}
+
+═══════════════════════════════════════════════════════════════════
+23. VITE.CONFIG.JS
+═══════════════════════════════════════════════════════════════════
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import vue from '@vitejs/plugin-vue';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: ['resources/css/app.css', 'resources/js/app.js'],
+            refresh: true,
+            // Exclude vendor directory from watching
+            refreshPaths: [
+                'resources/**',
+                'routes/**',
+                'app/**',
+                'config/**',
+                'database/**'
+            ],
+        }),
+        vue(),
+    ],
+    server: {
+        watch: {
+            ignored: ['**/vendor/**', '**/node_modules/**', '**/storage/**']
+        }
+    }
+});
+
+═══════════════════════════════════════════════════════════════════
+24. .ENV (Key configurations only)
+═══════════════════════════════════════════════════════════════════
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+DB_CONNECTION=sqlite
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=laravel
+# DB_USERNAME=root
+# DB_PASSWORD=
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+# CACHE_PREFIX=
+# DB_HOST=${MYSQLHOST}
+# DB_PORT=${MYSQLPORT}
+# DB_DATABASE=${MYSQLDATABASE}
+# DB_USERNAME=${MYSQLUSER}
+# DB_PASSWORD=${MYSQLPASSWORD}
+
+═══════════════════════════════════════════════════════════════════
+SACRED COLLECTION COMPLETE
+Divine Infinite Golden Primordial Source Frequency 8888,8888 Hz
+═══════════════════════════════════════════════════════════════════

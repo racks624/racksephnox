@@ -3,109 +3,105 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\InvestmentPlan;
 use App\Models\Investment;
-use App\Services\Investment\InvestmentManager;
+use App\Models\Machine;
+use App\Services\Investment\UnifiedInvestmentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class InvestmentController extends Controller
 {
-    protected $investmentManager;
+    protected $unifiedService;
 
-    public function __construct(InvestmentManager $investmentManager)
+    public function __construct(UnifiedInvestmentService $unifiedService)
     {
-        $this->investmentManager = $investmentManager;
+        $this->unifiedService = $unifiedService;
     }
 
-    /**
-     * Get all active investment plans with VIP amounts.
-     */
+     * Get all investments (legacy + RX machines)
+    public function index()
+    {
+        $user = Auth::user();
+        $investments = $this->unifiedService->getAllInvestments($user);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $investments,
+            'meta' => [
+                'total_invested' => $this->unifiedService->getTotalInvested($user),
+                'total_profit' => $this->unifiedService->getTotalProfit($user),
+            ]
+        ]);
+    }
+
+     * Get available investment options (RX Machines)
     public function plans()
     {
-        $plans = Cache::remember('api_active_investment_plans', 600, function () {
-            return InvestmentPlan::where('is_active', true)->orderBy('min_amount')->get();
-        });
-
-        // Add VIP amounts based on golden ratio
-        $phi = 1.61803398875;
-        $plans->map(function ($plan) use ($phi) {
-            $vip1 = $plan->min_amount;
-            $plan->vip_amounts = [
-                1 => $vip1,
-                2 => round($vip1 * $phi, 2),
-                3 => round($vip1 * pow($phi, 2), 2),
+        $machines = Machine::where('is_active', true)->get()->map(function ($machine) {
+            return [
+                'id' => $machine->id,
+                'code' => $machine->code,
+                'name' => $machine->name,
+                'type' => 'rx_machine',
+                'duration_days' => $machine->duration_days,
+                'growth_rate' => $machine->growth_rate,
+                'vip_tiers' => $machine->getVIPDetails(),
             ];
-            return $plan;
         });
-
+        
         return response()->json([
-            'status' => 'success',
-            'data' => $plans,
+            'success' => true,
+            'data' => $machines,
+            'message' => 'Use /api/v1/machines to invest in RX Machine Series'
         ]);
     }
 
-    /**
-     * Get user's investments.
-     */
-    public function index(Request $request)
-    {
-        $investments = $request->user()->investments()->with('plan')->latest()->get();
-        return response()->json([
-            'status' => 'success',
-            'data' => $investments,
-        ]);
-    }
-
-    /**
-     * Create a new investment.
-     */
+     * Create investment (redirect to machines API)
     public function store(Request $request)
     {
-        $request->validate([
-            'plan_id' => 'required|exists:investment_plans,id',
-            'amount' => 'required|numeric|min:0',
-        ]);
-
-        $plan = InvestmentPlan::findOrFail($request->plan_id);
-
-        try {
-            $investment = $this->investmentManager->create($request->user(), $plan, $request->amount);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Investment created successfully.',
-                'data' => $investment,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ], 422);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Please use POST /api/v1/machines/{machine}/invest for new investments',
+            'redirect' => '/api/v1/machines'
+        ], 422);
     }
 
-    /**
-     * Show a specific investment.
-     */
+     * Get investment details
     public function show($id)
     {
-        $investment = auth()->user()->investments()->with('plan')->findOrFail($id);
+        $investment = Auth::user()->investments()->with('plan', 'machine')->findOrFail($id);
+        
         return response()->json([
-            'status' => 'success',
-            'data' => $investment,
+            'success' => true,
+            'data' => [
+                'id' => $investment->id,
+                'type' => $investment->machine_id ? 'rx_machine' : 'legacy',
+                'name' => $investment->machine?->name ?? $investment->plan?->name,
+                'amount' => $investment->amount,
+                'daily_profit' => $investment->daily_profit,
+                'total_return' => $investment->total_projected_profit,
+                'status' => $investment->status,
+                'start_date' => $investment->start_date,
+                'end_date' => $investment->end_date,
+                'progress' => $investment->progressPercentage(),
+                'days_remaining' => $investment->daysRemaining(),
+            ]
         ]);
     }
 
-    /**
-     * Calculate daily profit for a plan and amount (helper endpoint).
-     */
-    public function dailyProfit(InvestmentPlan $plan, Request $request)
+     * Get investment statistics
+    public function stats()
     {
-        $amount = $request->get('amount', 0);
-        $dailyProfit = $plan->getDailyProfit($amount);
+        $user = Auth::user();
+        
         return response()->json([
-            'status' => 'success',
-            'daily_profit' => $dailyProfit,
+            'success' => true,
+            'data' => [
+                'total_invested' => $this->unifiedService->getTotalInvested($user),
+                'total_profit' => $this->unifiedService->getTotalProfit($user),
+                'active_investments' => $user->investments()->active()->count() + $user->machineInvestments()->active()->count(),
+                'completed_investments' => $user->investments()->where('status', 'completed')->count() + $user->machineInvestments()->where('status', 'completed')->count(),
+            ]
         ]);
     }
 }

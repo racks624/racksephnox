@@ -12,10 +12,16 @@ class Machine extends Model
 
     // Sacred Constants
     const PHI = 1.618033988749895;
-    const LAMBDA = 1.272019649514069; // √Φ
+    const LAMBDA = 1.272019649514069;
     const PI = 3.141592653589793;
     const EULER = 2.718281828459045;
-    
+
+    // Wealth Frequency Constants (8888 Hz)
+    const DAILY_TAX_RATE = 0.0088;      // 88 Hz / 10,000
+    const WEEKLY_TAX_RATE = 0.08888;    // 8888 Hz / 100,000
+    const MONTHLY_TAX_RATE = 0.88888888; // 88,888,888 Hz scaled
+    const YEARLY_TAX_RATE = 0.8888888888888; // 8888,8888,8888,8888,8888 Hz
+
     // Risk Tiers
     const RISK_LOW = 'low';
     const RISK_MEDIUM_LOW = 'medium-low';
@@ -23,7 +29,7 @@ class Machine extends Model
     const RISK_MEDIUM_HIGH = 'medium-high';
     const RISK_HIGH = 'high';
     const RISK_VERY_HIGH = 'very-high';
-    
+
     // VIP Levels
     const VIP_BRONZE = 1;
     const VIP_SILVER = 2;
@@ -108,6 +114,20 @@ class Machine extends Model
     }
 
     /**
+     * Calculate 8888 Hz Wealth Tax on an amount
+     */
+    public function calculateWealthTax(float $amount, string $frequency): float
+    {
+        return match ($frequency) {
+            'daily'   => round($amount * self::DAILY_TAX_RATE, 2),
+            'weekly'  => round($amount * self::WEEKLY_TAX_RATE, 2),
+            'monthly' => round($amount * self::MONTHLY_TAX_RATE, 2),
+            'yearly'  => round($amount * self::YEARLY_TAX_RATE, 2),
+            default   => 0,
+        };
+    }
+
+    /**
      * Get complete VIP details with enterprise features
      */
     public function getVIPDetails(): array
@@ -142,6 +162,11 @@ class Machine extends Model
                 'multiplier' => 1 + (($level - 1) * 0.05),
                 'staking_reward' => $this->staking_reward * $level ?? 0,
                 'referral_bonus' => $this->referral_bonus_rate + ($level * 0.5),
+                // 8888 Hz Wealth Tax
+                'daily_tax' => $this->calculateWealthTax($dailyProfit, 'daily'),
+                'weekly_tax' => $this->calculateWealthTax($dailyProfit * 7, 'weekly'),
+                'monthly_tax' => $this->calculateWealthTax($dailyProfit * 30, 'monthly'),
+                'yearly_tax' => $this->calculateWealthTax($dailyProfit * 365, 'yearly'),
             ];
         }
         return $vips;

@@ -1,97 +1,34 @@
-# Laravel specific
-/vendor
-/node_modules
-/storage/*.key
-/public/storage
-/storage/framework/cache/data
-/storage/framework/sessions
-/storage/framework/views
-/storage/logs/*.log
-/.phpunit.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/.idea
-/.vscode
-.DS_Store
-Thumbs.db
-/.env.backup
-/.phpunit.result.cache
-/coverage
-/.railway
-
-# Environment files (sensitive)
+/vendor/
+/node_modules/
 .env
 .env.*
 !.env.example
-.env.railway
-.env.production
-.env.local
-.env.*.local
-
-# Compiled assets
-/public/build
+/storage/*.key
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/logs/*.log
 /public/hot
 /public/storage
-/public/css
-/public/js
-/public/mix-manifest.json
-/public/vendor
-
-# Composer
-composer.phar
-composer.lock
-/.composer
-
-# PHPUnit
+/public/build
+Homestead.json
+Homestead.yaml
 .phpunit.result.cache
-/.phpunit.cache
-
-# Laravel IDE helper
-_ide_helper.php
-.phpstorm.meta.php
-
-# SQLite database (if using SQLite locally)
+.DS_Store
+Thumbs.db
 *.sqlite
 *.sqlite-journal
-
-# Logs
-*.log
-storage/logs/*.log
-
-# Session files
-storage/framework/sessions/*
-!storage/framework/sessions/.gitignore
-
-# Cache files
-storage/framework/cache/*
-!storage/framework/cache/.gitignore
-
-# Views cache
-storage/framework/views/*
-!storage/framework/views/.gitignore
-
-# Temporary files
-*.tmp
-*.swp
-*.swo
-
-# OS generated files
+/.idea
+/.vscode
+*.sublime-*
+/.phpstorm.meta.php
+/_ide_helper.php
+/.phpunit.cache
+/.fleet
+/.project
+/.settings
+/railway.json
+/.railway
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-
-# Vite
-/build
-/.vite
-
-# Sentry
-.sentry
-
-# Telescope
-/telescope
+*.log

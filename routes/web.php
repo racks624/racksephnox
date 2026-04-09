@@ -133,3 +133,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 // Include Breeze authentication routes
 require __DIR__.'/auth.php';
+
+// Unified investment view (shows both legacy and machine investments)
+Route::get('/my-investments', [App\Http\Controllers\InvestmentWebController::class, 'index'])->name('investments.unified')->middleware('auth');

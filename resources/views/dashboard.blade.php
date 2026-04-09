@@ -3,7 +3,7 @@
 @section('content')
 <div x-data="dashboardManager()" x-init="init()" class="py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <!-- Sacred Header with Prismatic Silver‑Gold -->
         <div class="text-center mb-12">
             <div class="inline-block spiral-ornament">
@@ -20,17 +20,13 @@
                 <i class="fas fa-home text-2xl text-gold group-hover:scale-110 transition"></i>
                 <p class="text-xs text-ivory/70 mt-1">Home</p>
             </a>
-            <a href="{{ route('web.investments') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
-                <i class="fas fa-chart-line text-2xl text-gold group-hover:scale-110 transition"></i>
-                <p class="text-xs text-ivory/70 mt-1">Invest</p>
+            <a href="{{ route('machines.index') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
+                <i class="fas fa-microchip text-2xl text-gold group-hover:scale-110 transition"></i>
+                <p class="text-xs text-ivory/70 mt-1">Machines</p>
             </a>
             <a href="{{ route('wallet') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
                 <i class="fas fa-wallet text-2xl text-gold group-hover:scale-110 transition"></i>
                 <p class="text-xs text-ivory/70 mt-1">Wallet</p>
-            </a>
-            <a href="{{ route('machines.index') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
-                <i class="fas fa-microchip text-2xl text-gold group-hover:scale-110 transition"></i>
-                <p class="text-xs text-ivory/70 mt-1">Machines</p>
             </a>
             <a href="{{ route('trading.index') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
                 <i class="fab fa-bitcoin text-2xl text-gold group-hover:scale-110 transition"></i>
@@ -43,6 +39,10 @@
             <a href="{{ route('withdrawal.form') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
                 <i class="fas fa-arrow-up text-2xl text-gold group-hover:scale-110 transition"></i>
                 <p class="text-xs text-ivory/70 mt-1">Withdraw</p>
+            </a>
+            <a href="{{ route('social-trading.leaderboard') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
+                <i class="fas fa-trophy text-2xl text-gold group-hover:scale-110 transition"></i>
+                <p class="text-xs text-ivory/70 mt-1">Leaderboard</p>
             </a>
             <a href="{{ route('profile.edit') }}" class="quick-nav-item bg-gold/10 rounded-xl p-3 text-center hover:bg-gold/20 transition group">
                 <i class="fas fa-user-circle text-2xl text-gold group-hover:scale-110 transition"></i>
@@ -67,16 +67,11 @@
                 <div class="animate-pulse bg-gold-500/10 rounded-2xl h-24"></div>
                 <div class="animate-pulse bg-gold-500/10 rounded-2xl h-24"></div>
             </div>
-            <div class="animate-pulse bg-gold-500/10 rounded-2xl h-48 mb-10"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                <div class="animate-pulse bg-gold-500/10 rounded-2xl h-64"></div>
-                <div class="animate-pulse bg-gold-500/10 rounded-2xl h-64"></div>
-            </div>
         </div>
 
         <!-- Actual Content -->
         <div x-show="!loading" x-cloak>
-            
+
             <!-- Success/Error Flash Messages -->
             @if(session('success'))
             <div class="mb-6 bg-green-500/20 border-l-4 border-green-500 rounded-xl p-4 animate-pulse">
@@ -96,7 +91,7 @@
             </div>
             @endif
 
-            <!-- 4 Wealth Pillars -->
+            <!-- 4 Wealth Pillars + Machine Stats -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 <div class="stat-card p-5 group">
                     <div class="flex items-center justify-between mb-3">
@@ -117,31 +112,32 @@
                         <span class="text-gold-400 text-sm uppercase tracking-wider">Total Invested</span>
                         <i class="fas fa-chart-line text-2xl text-gold opacity-60 group-hover:opacity-100 transition"></i>
                     </div>
-                    <div class="stat-value text-3xl font-bold">KES {{ number_format($totalInvested ?? 0, 2) }}</div>
-                    <div class="mt-3">
-                        <a href="{{ route('web.investments') }}" class="text-xs text-gold-400 hover:text-gold transition">View Portfolio →</a>
+                    <div class="stat-value text-3xl font-bold">KES {{ number_format(($totalInvested ?? 0) + ($totalMachineInvested ?? 0), 2) }}</div>
+                    <div class="mt-3 flex justify-between text-xs">
+                        <span class="text-ivory/50">Legacy: KES {{ number_format($totalInvested ?? 0, 2) }}</span>
+                        <span class="text-gold-400">Machines: KES {{ number_format($totalMachineInvested ?? 0, 2) }}</span>
                     </div>
                     <div class="mt-2 text-xs text-gold-500">ROI: {{ $roi ?? 0 }}%</div>
                 </div>
 
                 <div class="stat-card p-5 group">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-gold-400 text-sm uppercase tracking-wider">Projected Profit</span>
+                        <span class="text-gold-400 text-sm uppercase tracking-wider">Daily Profit</span>
                         <i class="fas fa-chart-simple text-2xl text-gold opacity-60 group-hover:opacity-100 transition"></i>
                     </div>
-                    <div class="stat-value text-3xl font-bold">KES {{ number_format($totalProfit ?? 0, 2) }}</div>
-                    <div class="mt-3 text-xs text-gold-400">Based on current resonance</div>
+                    <div class="stat-value text-3xl font-bold">KES {{ number_format($totalMachineDailyProfit ?? 0, 2) }}</div>
+                    <div class="mt-3 text-xs text-gold-400">From {{ $activeMachineCount ?? 0 }} active machine(s)</div>
                 </div>
 
                 <div class="stat-card p-5 group">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-gold-400 text-sm uppercase tracking-wider">Active Investments</span>
+                        <span class="text-gold-400 text-sm uppercase tracking-wider">Machine Profit</span>
                         <i class="fas fa-chart-pie text-2xl text-gold opacity-60 group-hover:opacity-100 transition"></i>
                     </div>
-                    <div class="stat-value text-3xl font-bold">{{ $activeInvestments ?? 0 }}</div>
+                    <div class="stat-value text-3xl font-bold">KES {{ number_format($totalMachineProfitAccrued ?? 0, 2) }}</div>
                     <div class="mt-2 flex justify-between items-center">
-                        <span class="text-xs text-gold-500">Completed: {{ $completedInvestments ?? 0 }}</span>
-                        <a href="{{ route('web.investments') }}" class="text-xs text-gold-400 hover:text-gold">View All →</a>
+                        <span class="text-xs text-gold-500">Wealth Tax: {{ number_format(($totalMachineProfitAccrued ?? 0) * 0.0088, 2) }} KES</span>
+                        <a href="{{ route('machines.index') }}" class="text-xs text-gold-400 hover:text-gold">View →</a>
                     </div>
                 </div>
             </div>
@@ -164,10 +160,10 @@
                 </div>
                 <div class="card-golden p-5 flex justify-between items-center">
                     <div>
-                        <p class="text-gold-400 text-sm uppercase tracking-wider">Machine Invested</p>
-                        <p class="text-2xl font-bold text-gold">KES {{ number_format($totalMachineInvested ?? 0, 2) }}</p>
+                        <p class="text-gold-400 text-sm uppercase tracking-wider">Referral Bonus</p>
+                        <p class="text-2xl font-bold text-gold">KES {{ number_format($totalBonus ?? 0, 2) }}</p>
                     </div>
-                    <i class="fas fa-microchip text-3xl text-gold"></i>
+                    <i class="fas fa-users text-3xl text-gold"></i>
                 </div>
             </div>
 
@@ -229,6 +225,61 @@
                 </div>
             </div>
 
+            <!-- Active Machine Investments Widget -->
+            @if(isset($activeMachineInvestments) && $activeMachineInvestments->count() > 0)
+            <div class="card-golden p-5 mt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gold flex items-center gap-2">
+                        <i class="fas fa-microchip animate-pulse"></i> Active RX Machines
+                    </h3>
+                    <span class="text-xs text-gold-400">{{ $activeMachineCount ?? 0 }} active investment(s)</span>
+                </div>
+                <div class="space-y-4">
+                    @foreach($activeMachineInvestments as $inv)
+                    <div class="bg-cosmic-deep/50 rounded-xl p-4 border border-gold/20 hover:border-gold/50 transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-bold text-gold text-lg">{{ $inv->machine->name }}</span>
+                                <span class="text-xs text-ivory/50 ml-2">VIP {{ $inv->vip_level }}</span>
+                            </div>
+                            <span class="text-sm text-green-400">+KES {{ number_format($inv->daily_profit, 2) }}/day</span>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                            <div>
+                                <p class="text-ivory/60 text-xs">Invested</p>
+                                <p class="text-gold font-semibold">KES {{ number_format($inv->amount, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-ivory/60 text-xs">Earned</p>
+                                <p class="text-green-400 font-semibold">KES {{ number_format($inv->profit_credited ?? 0, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-ivory/60 text-xs">Target</p>
+                                <p class="text-gold font-semibold">KES {{ number_format($inv->total_return, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-ivory/60 text-xs">Days Left</p>
+                                <p class="text-gold font-semibold">{{ $inv->days_left }}</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gold/20 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-gold-400 to-gold-600 h-2 rounded-full transition-all duration-500" style="width: {{ $inv->progress }}%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-ivory/50">Progress: {{ $inv->progress }}%</span>
+                            <span class="text-gold-400">Matures: {{ $inv->end_date->format('d M Y') }}</span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                <div class="mt-4 pt-3 border-t border-gold/20 text-right">
+                    <a href="{{ route('machines.index') }}" class="text-sm text-gold-400 hover:text-gold transition">
+                        View All Machines <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+            @endif
+
             <!-- Referral Widget -->
             <div x-data="referralWidget()" x-init="init()" class="card-golden p-5 mt-6">
                 <div class="flex justify-between items-center mb-4">
@@ -280,8 +331,8 @@
                                 <h3 class="text-2xl font-bold golden-title">🤖 Machine Series</h3>
                                 <span class="bg-gold/20 text-gold text-xs px-2 py-1 rounded-full">Φ Golden Ratio</span>
                             </div>
-                            <p class="text-ivory/70">Invest in our high‑return machines and earn 25% in 14 days</p>
-                            <p class="text-sm text-gold-400 mt-1">Choose from 6 machines, each with 3 VIP levels</p>
+                            <p class="text-ivory/70">Invest in our high‑return machines and earn up to 35% in 14 days</p>
+                            <p class="text-sm text-gold-400 mt-1">Choose from 6 machines (RX1-RX6), each with 3-6 VIP levels</p>
                         </div>
                         <div class="mt-4 md:mt-0">
                             <a href="{{ route('machines.index') }}" class="btn-golden inline-flex items-center gap-2">
@@ -353,7 +404,7 @@
                         </a>
                     </div>
                 </div>
-                
+
                 @if(isset($recentTransactions) && $recentTransactions->count())
                     <div class="overflow-x-auto">
                         <table class="w-full">
@@ -370,8 +421,8 @@
                                 <tr class="hover:bg-gold/5 transition">
                                     <td class="px-4 py-3 text-sm text-ivory">{{ $tx->created_at->format('Y-m-d') }}</td>
                                     <td class="px-4 py-3">
-                                        <span class="px-2 py-1 text-xs rounded-full 
-                                            @if(in_array($tx->type, ['credit', 'deposit', 'interest'])) bg-green-500/20 text-green-400
+                                        <span class="px-2 py-1 text-xs rounded-full
+                                            @if(in_array($tx->type, ['credit', 'deposit', 'interest', 'machine_interest'])) bg-green-500/20 text-green-400
                                             @elseif(in_array($tx->type, ['debit', 'withdrawal'])) bg-red-500/20 text-red-400
                                             @else bg-blue-500/20 text-blue-400 @endif">
                                             {{ ucfirst($tx->type) }}
@@ -497,15 +548,14 @@ function dashboardManager() {
 
         async refreshStats() {
             try {
-                const response = await fetch('/api/wallet', { 
-                    headers: { 
+                const response = await fetch('/api/wallet', {
+                    headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token'),
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
-                    } 
+                    }
                 });
                 if (response.ok) {
-                    const data = await response.json();
                     this.showToast('Balance refreshed', 'success');
                     location.reload();
                 }
@@ -517,7 +567,7 @@ function dashboardManager() {
         async refreshUnreadCount() {
             try {
                 const response = await fetch('/api/notifications/unread-count', {
-                    headers: { 
+                    headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token'),
                         'Accept': 'application/json'
                     }
@@ -534,7 +584,7 @@ function dashboardManager() {
         async refreshBTCPrice() {
             try {
                 const response = await fetch('/api/trading/price', {
-                    headers: { 
+                    headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token'),
                         'Accept': 'application/json'
                     }
@@ -579,7 +629,7 @@ function referralWidget() {
         async fetchStats() {
             try {
                 const response = await fetch('/api/referral-stats', {
-                    headers: { 
+                    headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token'),
                         'Accept': 'application/json'
                     }
@@ -612,7 +662,7 @@ function cryptoWidget() {
             this.loadingPrices = true;
             try {
                 const response = await fetch('/api/crypto-prices', {
-                    headers: { 
+                    headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token'),
                         'Accept': 'application/json'
                     }
@@ -646,12 +696,3 @@ function copyDashboardLink() {
 }
 </script>
 @endsection
-
-<!-- Enterprise RX Machines Section -->
-<div class="mt-12">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold golden-title">🚀 RX Machine Series</h2>
-        <a href="{{ route('machines.index') }}" class="text-gold-400 hover:text-gold text-sm">View All →</a>
-    </div>
-    @include('machines.enterprise-widget')
-</div>
