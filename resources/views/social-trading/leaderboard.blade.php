@@ -1,64 +1,246 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
+<div x-data="leaderboardManager()" x-init="init()" class="py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Hero Section -->
         <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold golden-title">🏆 Top Traders Leaderboard</h1>
-            <p class="text-gold-400 mt-2">Discover and follow the most profitable traders</p>
+            <div class="inline-block">
+                <div class="w-24 h-24 bg-gradient-to-r from-gold-400 via-amber-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-2xl">
+                    <i class="fas fa-trophy text-4xl text-white"></i>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold golden-title shimmer-gold">🏆 Elite Traders</h1>
+                <p class="text-gold-400 mt-4 text-lg">Discover, Follow & Copy the Most Profitable Masters</p>
+                <p class="text-sm text-ivory/50 mt-2">Real-time rankings updated every minute</p>
+            </div>
         </div>
 
-        <div class="card-golden p-6">
+        <!-- Global Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <div class="text-3xl mb-2">🏦</div>
+                <p class="text-2xl font-bold text-gold" x-text="globalStats.total_traders">0</p>
+                <p class="text-xs text-ivory/60">Active Traders</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <div class="text-3xl mb-2">📊</div>
+                <p class="text-2xl font-bold text-green-400" x-text="'KES ' + formatNumber(globalStats.total_pnl)">0</p>
+                <p class="text-xs text-ivory/60">Total P&L</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <div class="text-3xl mb-2">🎯</div>
+                <p class="text-2xl font-bold text-gold" x-text="globalStats.avg_win_rate + '%'">0</p>
+                <p class="text-xs text-ivory/60">Avg Win Rate</p>
+            </div>
+            <div class="card-golden p-4 text-center group hover:scale-105 transition">
+                <div class="text-3xl mb-2">👥</div>
+                <p class="text-2xl font-bold text-gold" x-text="formatNumber(globalStats.total_followers)">0</p>
+                <p class="text-xs text-ivory/60">Total Followers</p>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-gold/30 pb-4">
+            <button @click="activeFilter = 'all'" :class="{'bg-gold/20 text-gold': activeFilter === 'all'}" class="luxury-tab px-6 py-2 rounded-full transition">
+                🏆 All Traders
+            </button>
+            <button @click="activeFilter = 'top_pnl'" :class="{'bg-gold/20 text-gold': activeFilter === 'top_pnl'}" class="luxury-tab px-6 py-2 rounded-full transition">
+                📈 Top P&L
+            </button>
+            <button @click="activeFilter = 'top_winrate'" :class="{'bg-gold/20 text-gold': activeFilter === 'top_winrate'}" class="luxury-tab px-6 py-2 rounded-full transition">
+                🎯 Top Win Rate
+            </button>
+            <button @click="activeFilter = 'most_followed'" :class="{'bg-gold/20 text-gold': activeFilter === 'most_followed'}" class="luxury-tab px-6 py-2 rounded-full transition">
+                ⭐ Most Followed
+            </button>
+            <button @click="activeFilter = 'rising'" :class="{'bg-gold/20 text-gold': activeFilter === 'rising'}" class="luxury-tab px-6 py-2 rounded-full transition">
+                📈 Rising Stars
+            </button>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div class="card-golden p-6 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="border-b border-gold/30">
-                        指数
-                            <th class="px-4 py-3 text-left">Rank</th>
-                            <th class="px-4 py-3 text-left">Trader</th>
-                            <th class="px-4 py-3 text-left">Total P&L</th>
-                            <th class="px-4 py-3 text-left">Win Rate</th>
-                            <th class="px-4 py-3 text-left">Total Trades</th>
-                            <th class="px-4 py-3 text-left">Followers</th>
-                            <th class="px-4 py-3 text-left">Action</th>
-                         </thead>
+                    <thead class="border-b-2 border-gold/30">
+                        <tr class="text-gold-400 text-sm">
+                            <th class="px-4 py-4 text-left">#</th>
+                            <th class="px-4 py-4 text-left">Trader</th>
+                            <th class="px-4 py-4 text-left">Total P&L</th>
+                            <th class="px-4 py-4 text-left">Win Rate</th>
+                            <th class="px-4 py-4 text-left">Total Trades</th>
+                            <th class="px-4 py-4 text-left">Followers</th>
+                            <th class="px-4 py-4 text-left">ROI</th>
+                            <th class="px-4 py-4 text-center">Action</th>
+                        </tr>
+                    </thead>
                     <tbody class="divide-y divide-gold/20">
-                        @foreach($topTraders as $index => $trader)
-                        <tr class="hover:bg-gold/5 transition">
-                            <td class="px-4 py-3">
-                                @if($index == 0) 🥇
-                                @elseif($index == 1) 🥈
-                                @elseif($index == 2) 🥉
-                                @else {{ $index + 1 }}
+                        @forelse($topTraders as $index => $trader)
+                        <tr class="hover:bg-gold/5 transition group cursor-pointer" onclick="window.location='{{ route('social-trading.profile', $trader->username) }}'">
+                            <td class="px-4 py-4">
+                                @if($index == 0)
+                                    <span class="text-3xl">🥇</span>
+                                @elseif($index == 1)
+                                    <span class="text-3xl">🥈</span>
+                                @elseif($index == 2)
+                                    <span class="text-3xl">🥉</span>
+                                @else
+                                    <span class="text-gold-400 font-bold">{{ $index + 1 }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
-                                        <i class="fas fa-user-circle text-gold text-xl"></i>
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 flex items-center justify-center">
+                                        @if($trader->avatar)
+                                            <img src="{{ asset('storage/' . $trader->avatar) }}" class="w-12 h-12 rounded-full object-cover">
+                                        @else
+                                            <i class="fas fa-user-circle text-2xl text-white"></i>
+                                        @endif
                                     </div>
                                     <div>
-                                        <a href="{{ route('social-trading.profile', $trader->username) }}" class="font-semibold text-gold hover:underline">
-                                            {{ $trader->username }}
-                                        </a>
-                                        <p class="text-xs text-ivory/50">{{ $trader->user->name }}</p>
+                                        <div class="font-semibold text-gold">{{ $trader->username }}</div>
+                                        <div class="text-xs text-ivory/50">{{ $trader->user->name }}</div>
+                                    </div>
+                                    @if($trader->is_verified)
+                                        <span class="text-xs text-blue-400"><i class="fas fa-check-circle"></i> Verified</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="text-lg font-bold {{ $trader->total_pnl >= 0 ? 'text-green-400' : 'text-red-400' }}">
+                                    {{ $trader->total_pnl >= 0 ? '+' : '' }}KES {{ number_format($trader->total_pnl, 2) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-gold">{{ number_format($trader->win_rate, 1) }}%</span>
+                                    <div class="w-16 bg-gold/20 rounded-full h-1.5">
+                                        <div class="bg-gradient-to-r from-green-400 to-gold h-1.5 rounded-full" style="width: {{ $trader->win_rate }}%"></div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 {{ $trader->total_pnl >= 0 ? 'text-green-400' : 'text-red-400' }}">
-                                KES {{ number_format($trader->total_pnl, 2) }}
+                            <td class="px-4 py-4 text-gold">{{ number_format($trader->total_trades) }}</td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-users text-gold-400 text-sm"></i>
+                                    <span class="text-gold">{{ number_format($trader->followers_count) }}</span>
+                                </div>
                             </td>
-                            <td class="px-4 py-3">{{ number_format($trader->win_rate, 1) }}%</td>
-                            <td class="px-4 py-3">{{ number_format($trader->total_trades) }}</td>
-                            <td class="px-4 py-3">{{ number_format($trader->followers_count) }}</td>
-                            <td class="px-4 py-3">
-                                <a href="{{ route('social-trading.profile', $trader->username) }}" class="btn-golden text-sm py-1 px-3">View Profile</a>
+                            <td class="px-4 py-4">
+                                @php
+                                    $roi = $trader->total_pnl > 0 ? ($trader->total_pnl / 100000) * 100 : 0;
+                                @endphp
+                                <span class="text-green-400 font-semibold">{{ number_format($roi, 1) }}%</span>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <button @click.stop="followTrader({{ $trader->user_id }}, '{{ $trader->username }}')" class="btn-golden text-sm py-1.5 px-4">
+                                    <i class="fas fa-copy mr-1"></i> Copy
+                                </button>
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-12 text-ivory/50">
+                                <i class="fas fa-chart-line text-4xl mb-3 block"></i>
+                                No traders found. Be the first!
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Become a Trader CTA -->
+        <div class="mt-10 card-golden p-8 text-center bg-gradient-to-r from-gold-500/10 to-gold-600/10">
+            <h3 class="text-2xl font-bold golden-title mb-2">Become a Master Trader</h3>
+            <p class="text-ivory/70 mb-4">Share your trades, build a following, and earn from copy trading commissions</p>
+            <a href="{{ route('social-trading.profile.edit') }}" class="btn-golden inline-flex items-center gap-2">
+                <i class="fas fa-rocket"></i> Start Your Journey
+            </a>
+        </div>
+
+        <!-- Sacred Footer -->
+        <div class="text-center mt-12 pt-6 border-t border-gold/20">
+            <p class="text-xs text-gold-400/60">Divine Golden Phi | Infinite Spiral of Creation | 888 Hz</p>
+        </div>
     </div>
 </div>
+
+<script>
+function leaderboardManager() {
+    return {
+        activeFilter: 'all',
+        globalStats: {
+            total_traders: {{ $topTraders->count() }},
+            total_pnl: {{ $topTraders->sum('total_pnl') }},
+            avg_win_rate: {{ $topTraders->avg('win_rate') }},
+            total_followers: {{ $topTraders->sum('followers_count') }}
+        },
+        
+        init() {
+            // Animate stats on load
+            this.animateNumbers();
+        },
+        
+        animateNumbers() {
+            // Add animation to stat cards
+            const elements = document.querySelectorAll('.stat-value');
+            elements.forEach(el => {
+                const final = parseInt(el.innerText);
+                let current = 0;
+                const interval = setInterval(() => {
+                    if (current >= final) clearInterval(interval);
+                    el.innerText = current;
+                    current += Math.ceil(final / 50);
+                }, 20);
+            });
+        },
+        
+        async followTrader(userId, username) {
+            if (!confirm(`✨ Copy ${username}'s trades?\n\nYou will automatically copy ${username}'s trades with 100% ratio.`)) return;
+            
+            try {
+                const response = await fetch(`/social-trading/follow/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ copy_ratio: 100, auto_copy: true })
+                });
+                
+                if (response.ok) {
+                    alert(`✅ Now following ${username}! You will copy their trades automatically.`);
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert('❌ ' + (data.error || 'Failed to follow trader'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        },
+        
+        formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toLocaleString();
+        }
+    }
+}
+</script>
+
+<style>
+.luxury-tab {
+    background: rgba(212, 175, 55, 0.1);
+    color: #d4af37;
+    transition: all 0.3s ease;
+}
+.luxury-tab:hover {
+    background: rgba(212, 175, 55, 0.2);
+    transform: translateY(-2px);
+}
+</style>
 @endsection

@@ -217,11 +217,7 @@ class MachineController extends Controller
             'data' => $investments
         ]);
     }
-}
 
-    /**
-     * Get global machine statistics (AJAX)
-     */
     public function globalStats()
     {
         $machines = Machine::where('is_active', true)->get();
@@ -240,9 +236,6 @@ class MachineController extends Controller
         return response()->json(['success' => true, 'data' => $stats]);
     }
 
-    /**
-     * Get machine statistics (AJAX)
-     */
     public function machineStats(Machine $machine)
     {
         return response()->json([
@@ -251,9 +244,6 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
-     * Public statistics (no auth required)
-     */
     public function publicStats()
     {
         $machines = Machine::where('is_active', true)->get();
@@ -277,9 +267,6 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
-     * Early withdrawal from machine investment
-     */
     public function earlyWithdraw(MachineInvestment $investment)
     {
         if ($investment->user_id !== Auth::id()) {
@@ -318,10 +305,10 @@ class MachineController extends Controller
                 'refund_amount' => $refundAmount,
                 'penalty' => $penaltyRate,
             ]);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Withdrawal failed: ' . $e->getMessage()
             ], 500);
         }
     }
+}
