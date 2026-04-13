@@ -1,0 +1,18 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# PHP
+*.php diff=php
+
+# SQLite
+*.sqlite binary
+*.db binary
+
+# Images
+*.png binary
+*.jpg binary
+*.svg text
+
+# Lock files
+composer.lock linguist-generated=true
+package-lock.json linguist-generated=true
