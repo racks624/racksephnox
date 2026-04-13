@@ -1,10 +1,10 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="p-6">
-    <h1 class="text-2xl font-bold text-gold mb-6">⚙️ System Settings</h1>
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold text-gold">⚙️ System Settings</h1>
 
-    <div class="card-golden p-6">
+    <div class="admin-card p-6">
         <form method="POST" action="{{ route('admin.settings.update') }}">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -39,8 +39,8 @@
         </form>
     </div>
 
-    <div class="card-golden p-6 mt-6">
-        <h2 class="text-xl font-bold text-gold mb-4">Maintenance Mode</h2>
+    <div class="admin-card p-6">
+        <h2 class="text-xl font-bold text-gold mb-4">🔧 Maintenance Mode</h2>
         <p class="text-ivory/70 mb-4">Current status: {{ $settings['maintenance_mode'] ? '🔧 Maintenance Mode' : '✅ Live' }}</p>
         <form method="POST" action="{{ route('admin.settings.maintenance') }}">
             @csrf

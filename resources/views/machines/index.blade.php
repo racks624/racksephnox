@@ -3,8 +3,8 @@
 @section('content')
 <div x-data="rxMachinesManager()" x-init="init()" class="py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <!-- Global Hero -->
+
+        <!-- Hero Section -->
         <div class="text-center mb-16">
             <div class="inline-block">
                 <div class="w-24 h-24 bg-gradient-to-r from-gold-400 via-amber-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-2xl">
@@ -40,15 +40,14 @@
             </div>
         </div>
 
-        <!-- RX Machines Grid -->
+        <!-- Machines Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             @foreach($machines as $machine)
             @php
-                $vips = $machine->getVIPDetails();
-                $stats = $machine->getStatistics();
+                $vips = $machine->getVIPDetails();   // cached
+                $stats = $machine->getStatistics();   // cached
             @endphp
             <div class="card-golden p-6 group hover:scale-105 transition-all duration-300 border-t-4 border-gold/50">
-                <!-- Header -->
                 <div class="text-center mb-5">
                     <div class="w-20 h-20 bg-gradient-to-r {{ $machine->color }} rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
                         <i class="fas {{ $machine->icon ?? 'fa-microchip' }} text-3xl text-white"></i>
@@ -58,11 +57,11 @@
                     <p class="text-xs mt-1 px-2 py-0.5 inline-block rounded-full bg-gold/20 text-gold">{{ $machine->risk_profile }} Risk</p>
                 </div>
 
-                <!-- VIP Tiers -->
                 <div class="space-y-3">
-                    @foreach([1, 2, 3] as $level)
+                    @foreach([1,2,3] as $level)
                     @php $vip = $vips[$level]; @endphp
-                    <div class="bg-cosmic-deep/50 rounded-xl p-3 border border-gold/20 hover:border-gold/50 transition cursor-pointer" onclick="window.dispatchEvent(new CustomEvent('select-invest', { detail: { machine_id: {{ $machine->id }}, vip_level: {{ $level }}, amount: {{ $vip['amount'] }} } }))">
+                    <div class="bg-cosmic-deep/50 rounded-xl p-3 border border-gold/20 hover:border-gold/50 transition cursor-pointer"
+                         onclick="window.dispatchEvent(new CustomEvent('select-invest', { detail: { machine_id: {{ $machine->id }}, vip_level: {{ $level }}, amount: {{ $vip['amount'] }} } }))">
                         <div class="flex justify-between items-center">
                             <div>
                                 <span class="font-bold text-gold text-lg">VIP {{ $level }}</span>
@@ -79,9 +78,8 @@
                     @endforeach
                 </div>
 
-                <!-- Stats Footer -->
                 <div class="mt-5 pt-3 border-t border-gold/20 flex justify-between text-xs">
-                    <span class="text-ivory/50"><i class="fas fa-users mr-1"></i> {{ $stats['total_investors'] }} investors</span>
+                    <span class="text-ivory/50"><i class="fas fa-users mr-1"></i> {{ number_format($stats['total_investors']) }} investors</span>
                     <span class="text-ivory/50"><i class="fas fa-coins mr-1"></i> KES {{ number_format($stats['total_invested'] / 1000, 0) }}K</span>
                     <a href="{{ route('machines.show', $machine->code) }}" class="text-gold-400 hover:text-gold">Details →</a>
                 </div>
@@ -107,10 +105,13 @@ function rxMachinesManager() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                         body: JSON.stringify({ vip_level: e.detail.vip_level })
-                    }).then(res => res.json()).then(data => {
+                    })
+                    .then(res => res.json())
+                    .then(data => {
                         alert(data.message || (data.success ? '✅ Investment successful!' : '❌ Failed'));
                         if (data.success) location.reload();
-                    }).catch(err => alert('Error: ' + err.message));
+                    })
+                    .catch(err => alert('Error: ' + err.message));
                 }
             });
         }

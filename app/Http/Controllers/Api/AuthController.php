@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -19,26 +22,47 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'kyc_level' => 'basic',
-        ]);
+        try {
+            DB::beginTransaction();
+            
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'referral_code' => strtoupper(Str::random(8)),
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        // Handle referral if present
-        if (session('ref')) {
-            $user->referred_by = session('ref');
-            $user->save();
+            Wallet::create([
+                'user_id' => $user->id,
+                'balance' => 0,
+            ]);
+
+            DB::commit();
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ],
+                'token' => $token,
+            ], 201);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('API Registration error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ], 500);
         }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ], 201);
     }
 
     public function login(Request $request)
@@ -48,18 +72,24 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
+        $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+            ],
             'token' => $token,
         ]);
     }
@@ -67,87 +97,17 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['success' => true, 'message' => 'Logged out']);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user()->load('wallet'));
+        $user = $request->user();
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+        ]);
     }
 }
-
-/**
- * @OA\Post(
- *     path="/api/v1/register",
- *     summary="Register a new user",
- *     tags={"Authentication"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"name","email","phone","password","password_confirmation"},
- *             @OA\Property(property="name", type="string", example="John Kamau"),
- *             @OA\Property(property="email", type="string", format="email", example="user@racksephnox.com"),
- *             @OA\Property(property="phone", type="string", example="+254712345678"),
- *             @OA\Property(property="referral_code", type="string", example="ABC123XY", nullable=true),
- *             @OA\Property(property="password", type="string", format="password", example="password123"),
- *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123")
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="User registered successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Registration successful"),
- *             @OA\Property(property="data", type="object",
- *                 @OA\Property(property="token", type="string", example="1|abcdef...")
- *             )
- *         )
- *     )
- * )
- */
- 
-/**
- * @OA\Post(
- *     path="/api/v1/login",
- *     summary="Login user",
- *     tags={"Authentication"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"email","password"},
- *             @OA\Property(property="email", type="string", format="email", example="user@racksephnox.com"),
- *             @OA\Property(property="password", type="string", format="password", example="password123")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Login successful",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Login successful"),
- *             @OA\Property(property="data", type="object",
- *                 @OA\Property(property="token", type="string", example="1|abcdef..."),
- *                 @OA\Property(property="user", type="object")
- *             )
- *         )
- *     )
- * )
- */
- 
-/**
- * @OA\Post(
- *     path="/api/v1/logout",
- *     summary="Logout user",
- *     tags={"Authentication"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Response(
- *         response=200,
- *         description="Logged out successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Logged out successfully")
- *         )
- *     )
- * )
- */

@@ -2,33 +2,48 @@
 
 namespace App\Notifications;
 
-use App\Models\MpesaTransaction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 
-class DepositConfirmed extends Notification
+class DepositConfirmed extends Notification implements ShouldQueue
 {
     use Queueable;
 
     protected $transaction;
 
-    public function __construct(MpesaTransaction $transaction)
+    public function __construct($transaction)
     {
         $this->transaction = $transaction;
     }
 
     public function via($notifiable)
     {
-        return ['database'];
+        $prefs = $notifiable->notification_preferences ?? [];
+        $channels = [];
+        if ($prefs['email_deposit'] ?? false) $channels[] = 'mail';
+        if ($prefs['database_deposit'] ?? false) $channels[] = 'database';
+        if ($prefs['broadcast_deposit'] ?? false) $channels[] = 'broadcast';
+        return $channels;
+    }
+
+    public function toMail($notifiable)
+    {
+        return (new MailMessage)
+            ->subject('Deposit Confirmed')
+            ->greeting("Hello {$notifiable->name}!")
+            ->line("Your deposit of KES " . number_format($this->transaction->amount, 2) . " has been confirmed.")
+            ->action('View Wallet', url('/wallet'))
+            ->line('Thank you for investing with Racksephnox.');
     }
 
     public function toArray($notifiable)
     {
         return [
-            'message' => 'KES ' . number_format($this->transaction->amount, 2) . ' deposited to your wallet.',
-            'transaction_id' => $this->transaction->id,
-            'receipt' => $this->transaction->mpesa_receipt_number,
-            'time' => now()->toDateTimeString(),
+            'message' => "Deposit of KES " . number_format($this->transaction->amount, 2) . " completed.",
+            'icon' => '💰',
+            'category' => 'deposit',
         ];
     }
 }

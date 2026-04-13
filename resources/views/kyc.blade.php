@@ -2,78 +2,74 @@
 
 @section('content')
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <!-- KYC Status -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">KYC Verification</h3>
-                <p>Current Level: <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded">{{ auth()->user()->kyc_level }}</span></p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- KYC Status Card -->
+        <div class="card-golden p-6 mb-6">
+            <h3 class="text-xl font-bold text-gold mb-4">KYC Verification</h3>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-ivory/70">Current Level:</span>
+                <span class="px-3 py-1 rounded-full bg-gold/20 text-gold text-sm">{{ auth()->user()->kyc_level ?? 'Basic' }}</span>
                 @if(auth()->user()->is_verified)
-                    <p class="text-green-600 mt-2">✅ Verified</p>
+                    <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm">✓ Verified</span>
                 @else
-                    <p class="text-yellow-600 mt-2">⏳ Pending verification</p>
+                    <span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">⏳ Pending</span>
                 @endif
             </div>
         </div>
 
-        <!-- Upload Document -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">Upload Document</h3>
-                @if(session('success'))
-                    <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">{{ session('success') }}</div>
-                @endif
-                <form method="POST" action="{{ route('kyc.upload') }}" enctype="multipart/form-data">
-                    @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Document Type</label>
-                            <select name="document_type" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="national_id">National ID</option>
-                                <option value="passport">Passport</option>
-                                <option value="drivers_license">Driver's License</option>
-                                <option value="proof_of_address">Proof of Address</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">File</label>
-                            <input type="file" name="document" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                        </div>
+        <!-- Upload Document Card -->
+        <div class="card-golden p-6 mb-6">
+            <h3 class="text-xl font-bold text-gold mb-4">Upload Document</h3>
+            @if(session('success'))
+                <div class="mb-4 p-3 bg-green-500/20 border border-green-500 rounded-lg text-green-400">{{ session('success') }}</div>
+            @endif
+            <form method="POST" action="{{ route('kyc.upload') }}" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gold-400 mb-1">Document Type</label>
+                        <select name="document_type" class="w-full px-4 py-2 border border-gold/30 rounded-lg bg-cosmic-void/50 text-white focus:outline-none focus:ring-2 focus:ring-gold">
+                            <option value="national_id">National ID</option>
+                            <option value="passport">Passport</option>
+                            <option value="drivers_license">Driver's License</option>
+                            <option value="proof_of_address">Proof of Address</option>
+                        </select>
                     </div>
-                    <div class="mt-4">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Upload</button>
+                    <div>
+                        <label class="block text-sm font-medium text-gold-400 mb-1">File (jpg, png, pdf, max 5MB)</label>
+                        <input type="file" name="document" class="w-full text-sm text-ivory/70 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gold/20 file:text-gold hover:file:bg-gold/30">
                     </div>
-                </form>
-            </div>
+                </div>
+                <button type="submit" class="btn-golden w-full md:w-auto">Upload Document</button>
+            </form>
         </div>
 
-        <!-- Submitted Documents -->
+        <!-- Submitted Documents Table -->
         @if($documents->count())
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4">Submitted Documents</h3>
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead>
+        <div class="card-golden p-6">
+            <h3 class="text-xl font-bold text-gold mb-4">Submitted Documents</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-gold/30">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
+                            <th class="px-4 py-3 text-left text-gold-400">Type</th>
+                            <th class="px-4 py-3 text-left text-gold-400">Status</th>
+                            <th class="px-4 py-3 text-left text-gold-400">Uploaded</th>
+                        </thead>
+                    <tbody class="divide-y divide-gold/20">
                         @foreach($documents as $doc)
                         <tr>
-                            <td class="px-6 py-4">{{ str_replace('_', ' ', ucfirst($doc->document_type)) }}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs rounded
-                                    @if($doc->status == 'verified') bg-green-100 text-green-800
-                                    @elseif($doc->status == 'rejected') bg-red-100 text-red-800
-                                    @else bg-yellow-100 text-yellow-800
-                                    @endif">
-                                    {{ ucfirst($doc->status) }}
-                                </span>
+                            <td class="px-4 py-3 text-ivory">{{ str_replace('_', ' ', ucfirst($doc->document_type)) }}</td>
+                            <td class="px-4 py-3">
+                                @if($doc->status == 'verified')
+                                    <span class="px-2 py-1 rounded-full bg-green-500/20 text-green-400">✓ Verified</span>
+                                @elseif($doc->status == 'rejected')
+                                    <span class="px-2 py-1 rounded-full bg-red-500/20 text-red-400">✗ Rejected</span>
+                                @else
+                                    <span class="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">⏳ Pending</span>
+                                @endif
                             </td>
-                            <td class="px-6 py-4">{{ $doc->created_at->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-ivory/70">{{ $doc->created_at->format('Y-m-d') }}</td>
                         </tr>
                         @endforeach
                     </tbody>

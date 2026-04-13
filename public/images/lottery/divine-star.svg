@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs><linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFA500"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <polygon points="50,10 61,35 90,40 68,60 75,90 50,75 25,90 32,60 10,40 39,35" fill="url(#starGrad)" filter="url(#glow)"/>
+  <circle cx="50" cy="50" r="8" fill="#FFF" opacity="0.6"/>
+</svg>

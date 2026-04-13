@@ -12,20 +12,15 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-    'phone',
-        'referral_code',
-        'referred_by',
-        'kyc_status',
-        'is_active',
         'name', 'email', 'phone', 'password',
+        'referral_code', 'referred_by', 'kyc_status', 'is_active',
         'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
-        'is_admin', 'kyc_level', 'is_verified',
-        'referral_code', 'referred_by', 'onboarding_completed',
+        'is_admin', 'kyc_level', 'is_verified', 'onboarding_completed',
+        'avatar', 'notification_preferences'
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'two_factor_secret',
-        'two_factor_recovery_codes',
+        'password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes',
     ];
 
     protected $casts = [
@@ -105,15 +100,17 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::created(function ($user) {
-            // Create wallet for new user
-            $user->wallet()->create(['balance' => 0]);
+            if (!$user->wallet) {
+                $wallet = $user->wallet()->create([
+                    'user_id' => $user->id,
+                    'balance' => 0,
+                ]);
 
-            // Generate referral code
-            $user->referral_code = strtoupper(substr(md5($user->id . $user->email), 0, 8));
-            $user->save();
+                $user->referral_code = strtoupper(substr(md5($user->id . $user->email), 0, 8));
+                $user->save();
 
-            // Registration bonus (KES 60)
-            $user->wallet->credit(60, 'Welcome bonus');
+                $wallet->credit(60, 'Welcome bonus');
+            }
         });
     }
 }

@@ -18,7 +18,9 @@ class InvestmentController extends Controller
         $this->unifiedService = $unifiedService;
     }
 
+    /**
      * Get all investments (legacy + RX machines)
+     */
     public function index()
     {
         $user = Auth::user();
@@ -34,7 +36,9 @@ class InvestmentController extends Controller
         ]);
     }
 
+    /**
      * Get available investment options (RX Machines)
+     */
     public function plans()
     {
         $machines = Machine::where('is_active', true)->get()->map(function ($machine) {
@@ -56,7 +60,9 @@ class InvestmentController extends Controller
         ]);
     }
 
+    /**
      * Create investment (redirect to machines API)
+     */
     public function store(Request $request)
     {
         return response()->json([
@@ -66,7 +72,9 @@ class InvestmentController extends Controller
         ], 422);
     }
 
+    /**
      * Get investment details
+     */
     public function show($id)
     {
         $investment = Auth::user()->investments()->with('plan', 'machine')->findOrFail($id);
@@ -89,7 +97,9 @@ class InvestmentController extends Controller
         ]);
     }
 
+    /**
      * Get investment statistics
+     */
     public function stats()
     {
         $user = Auth::user();

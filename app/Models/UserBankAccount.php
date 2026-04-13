@@ -9,15 +9,7 @@ class UserBankAccount extends Model
 {
     use HasFactory;
 
-    protected $table = 'user_bank_accounts';
-
-    protected $fillable = [
-        'user_id', 'bank_name', 'account_name', 'account_number', 'branch', 'is_default'
-    ];
-
-    protected $casts = [
-        'is_default' => 'boolean',
-    ];
+    protected $fillable = ['user_id', 'bank_name', 'account_name', 'account_number'];
 
     public function user()
     {

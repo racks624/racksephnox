@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\WithdrawalRequest;
-use App\Services\WithdrawalService;
+use App\Models\UserBankAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class WithdrawalController extends Controller
 {
@@ -13,53 +14,65 @@ class WithdrawalController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:530|max:1000000',
-            'phone' => 'required|string|regex:/^254[0-9]{9}$/',
+            'bank_account_id' => 'required|exists:user_bank_accounts,id',
         ]);
 
-        $amount = $request->amount;
-        $validation = WithdrawalService::validateWithdrawal($amount);
-        if (!$validation['valid']) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validation['message']
-            ], 422);
+        $user = Auth::user();
+        
+        if ($user->wallet->balance < $request->amount) {
+            return response()->json(['success' => false, 'message' => 'Insufficient balance'], 422);
         }
-
-        $fee = WithdrawalService::calculateFee($amount);
-        $netAmount = WithdrawalService::getNetAmount($amount);
-        $user = $request->user();
-
-        if ($user->wallet->balance < $amount) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Insufficient wallet balance.'
-            ], 422);
-        }
-
-        $user->wallet->debit($amount, 'Withdrawal request: ' . $amount . ' (fee: ' . $fee . ')');
 
         $withdrawal = WithdrawalRequest::create([
             'user_id' => $user->id,
-            'amount' => $amount,
-            'fee' => $fee,
-            'net_amount' => $netAmount,
-            'phone' => $request->phone,
+            'amount' => $request->amount,
+            'bank_account_id' => $request->bank_account_id,
             'status' => 'pending',
         ]);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Withdrawal request submitted.',
-            'data' => $withdrawal
-        ], 201);
+            'success' => true,
+            'message' => 'Withdrawal request submitted successfully',
+            'data' => $withdrawal,
+        ]);
     }
 
-    public function history(Request $request)
+    public function history()
     {
-        $withdrawals = $request->user()->withdrawalRequests()->latest()->paginate(20);
-        return response()->json([
-            'status' => 'success',
-            'data' => $withdrawals
+        $withdrawals = WithdrawalRequest::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return response()->json(['success' => true, 'data' => $withdrawals]);
+    }
+
+    public function status($id)
+    {
+        $withdrawal = WithdrawalRequest::where('user_id', Auth::id())->findOrFail($id);
+        return response()->json(['success' => true, 'data' => $withdrawal]);
+    }
+
+    public function addBankAccount(Request $request)
+    {
+        $request->validate([
+            'bank_name' => 'required|string|max:100',
+            'account_name' => 'required|string|max:100',
+            'account_number' => 'required|string|max:50',
         ]);
+
+        $account = UserBankAccount::create([
+            'user_id' => Auth::id(),
+            'bank_name' => $request->bank_name,
+            'account_name' => $request->account_name,
+            'account_number' => $request->account_number,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $account]);
+    }
+
+    public function removeBankAccount($id)
+    {
+        $account = UserBankAccount::where('user_id', Auth::id())->findOrFail($id);
+        $account->delete();
+        return response()->json(['success' => true, 'message' => 'Bank account removed']);
     }
 }

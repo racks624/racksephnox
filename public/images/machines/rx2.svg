@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs><linearGradient id="machineGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F5AE23"/><stop offset="100%" stop-color="#B8860B"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect x="30" y="40" width="140" height="120" rx="15" fill="url(#machineGrad2)" filter="url(#glow)" opacity="0.9"/>
+  <rect x="40" y="50" width="120" height="40" rx="5" fill="#1E1B2E" stroke="#F5AE23" stroke-width="2"/>
+  <text x="100" y="75" font-family="Arial" font-size="16" fill="#F5AE23" text-anchor="middle" font-weight="bold">RX-2</text>
+  <polygon points="100,105 110,125 130,125 115,135 120,155 100,145 80,155 85,135 70,125 90,125" fill="#FFD700" opacity="0.8"/>
+</svg>

@@ -4,104 +4,87 @@ namespace Database\Seeders;
 
 use App\Models\Machine;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class RXMachineSeeder extends Seeder
 {
     public function run()
     {
-        $phi = Machine::PHI;
+        $phi = 1.61803398875;
         
         $machines = [
             [
                 'code' => 'RX1',
                 'name' => 'RX1 – Aurora Machine',
-                'description' => 'Entry‑level divine portal, perfect for first‑time investors. Low risk, steady returns.',
                 'vip1_start_amount' => 5300,
+                'vip2_start_amount' => round(5300 * $phi, 2),
+                'vip3_start_amount' => round(5300 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 25.0,
-                'risk_profile' => 'Low',
-                'icon' => 'fa-feather-alt',
-                'color' => 'from-blue-400 to-cyan-400',
-                'min_daily_profit' => 94.64,
-                'max_daily_profit' => 247.77,
-                'referral_bonus_rate' => 5.0,
-                'early_withdrawal_penalty' => 10.0,
-                'features' => ['Instant daily profit', 'Low risk', 'Beginner friendly']
+                'is_active' => true,
             ],
             [
                 'code' => 'RX2',
                 'name' => 'RX2 – Nova Machine',
-                'description' => 'Intermediate growth portal. Balanced risk with amplified returns.',
                 'vip1_start_amount' => 11000,
+                'vip2_start_amount' => round(11000 * $phi, 2),
+                'vip3_start_amount' => round(11000 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 26.0,
-                'risk_profile' => 'Low‑Medium',
-                'icon' => 'fa-star',
-                'color' => 'from-green-400 to-emerald-400',
-                'referral_bonus_rate' => 5.5,
-                'early_withdrawal_penalty' => 12.0,
-                'features' => ['Balanced risk', 'Higher returns', 'VIP benefits']
+                'is_active' => true,
             ],
             [
                 'code' => 'RX3',
                 'name' => 'RX3 – Prism Machine',
-                'description' => 'Advanced high‑yield portal. Medium risk with exceptional gains.',
                 'vip1_start_amount' => 22000,
+                'vip2_start_amount' => round(22000 * $phi, 2),
+                'vip3_start_amount' => round(22000 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 27.0,
-                'risk_profile' => 'Medium',
-                'icon' => 'fa-gem',
-                'color' => 'from-purple-400 to-pink-400',
-                'referral_bonus_rate' => 6.0,
-                'early_withdrawal_penalty' => 15.0,
-                'features' => ['High yield', 'Medium risk', 'Advanced analytics']
+                'is_active' => true,
             ],
             [
                 'code' => 'RX4',
                 'name' => 'RX4 – Eclipse Machine',
-                'description' => 'Premium wealth portal. Medium‑high risk for experienced investors.',
                 'vip1_start_amount' => 53000,
+                'vip2_start_amount' => round(53000 * $phi, 2),
+                'vip3_start_amount' => round(53000 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 28.0,
-                'risk_profile' => 'Medium‑High',
-                'icon' => 'fa-moon',
-                'color' => 'from-indigo-400 to-purple-400',
-                'referral_bonus_rate' => 6.5,
-                'early_withdrawal_penalty' => 18.0,
-                'features' => ['Premium returns', 'Wealth acceleration', 'Priority support']
+                'is_active' => true,
             ],
             [
                 'code' => 'RX5',
                 'name' => 'RX5 – Quantum Machine',
-                'description' => 'Elite high‑frequency portal. High risk, exponential returns.',
                 'vip1_start_amount' => 110000,
+                'vip2_start_amount' => round(110000 * $phi, 2),
+                'vip3_start_amount' => round(110000 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 30.0,
-                'risk_profile' => 'High',
-                'icon' => 'fa-atom',
-                'color' => 'from-orange-400 to-red-400',
-                'referral_bonus_rate' => 7.0,
-                'early_withdrawal_penalty' => 20.0,
-                'features' => ['Exponential growth', 'High risk high reward', 'VIP support']
+                'is_active' => true,
             ],
             [
                 'code' => 'RX6',
                 'name' => 'RX6 – Infinity Machine',
-                'description' => 'The ultimate sacred investment portal. Very high risk, divine returns.',
                 'vip1_start_amount' => 220000,
+                'vip2_start_amount' => round(220000 * $phi, 2),
+                'vip3_start_amount' => round(220000 * pow($phi, 2), 2),
                 'duration_days' => 14,
                 'growth_rate' => 35.0,
-                'risk_profile' => 'Very High',
-                'icon' => 'fa-infinity',
-                'color' => 'from-amber-400 to-yellow-400',
-                'referral_bonus_rate' => 8.0,
-                'early_withdrawal_penalty' => 25.0,
-                'features' => ['Maximum returns', 'Divine algorithm', 'Exclusive access']
+                'is_active' => true,
             ],
         ];
 
+        // Use updateOrCreate instead of truncate (preserves foreign keys)
         foreach ($machines as $data) {
             Machine::updateOrCreate(['code' => $data['code']], $data);
+            $this->command->info("✅ Created/Updated: {$data['name']}");
+            $this->command->line("   VIP 1: KES " . number_format($data['vip1_start_amount'], 2));
+            $this->command->line("   VIP 2: KES " . number_format($data['vip2_start_amount'], 2));
+            $this->command->line("   VIP 3: KES " . number_format($data['vip3_start_amount'], 2));
+            $this->command->line("");
         }
+        
+        $this->command->info("✨ Total machines: " . Machine::count());
     }
 }

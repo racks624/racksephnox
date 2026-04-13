@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8860B"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <text x="50" y="65" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="url(#goldGrad)" text-anchor="middle" filter="url(#glow)">7777</text>
+  <path d="M25 45 L75 45" stroke="url(#goldGrad)" stroke-width="3" filter="url(#glow)"/>
+</svg>

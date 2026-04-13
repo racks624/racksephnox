@@ -3,26 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\KycDocument;
-use App\Services\Kyc\DocumentStorage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class KycController extends Controller
 {
-    protected $documentStorage;
-
-    public function __construct(DocumentStorage $documentStorage)
-    {
-        $this->documentStorage = $documentStorage;
-    }
-
     public function index()
     {
-        // Cache KYC documents for 1 minute
-        $documents = Cache::remember('kyc_docs_' . auth()->id(), 60, function () {
-            return auth()->user()->kycDocuments;
-        });
-
+        $documents = Auth::user()->kycDocuments;
         return view('kyc', compact('documents'));
     }
 
@@ -33,22 +23,15 @@ class KycController extends Controller
             'document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        $path = $this->documentStorage->store(
-            $request->file('document'),
-            auth()->id(),
-            $request->document_type
-        );
+        $path = $request->file('document')->store('kyc_documents', 'public');
 
         KycDocument::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'document_type' => $request->document_type,
             'document_path' => $path,
             'status' => 'pending',
         ]);
 
-        // Clear cache for this user's KYC documents
-        Cache::forget('kyc_docs_' . auth()->id());
-
-        return redirect()->route('kyc')->with('success', 'Document uploaded successfully.');
+        return redirect()->route('kyc')->with('success', 'Document uploaded. Awaiting admin review.');
     }
 }

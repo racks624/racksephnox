@@ -168,6 +168,8 @@ class MachineInvestment extends Model
         
         $this->status = self::STATUS_COMPLETED;
         $this->save();
+	// after setting status = completed
+	$user->notify(new InvestmentMatured($this));
         
         return true;
     }

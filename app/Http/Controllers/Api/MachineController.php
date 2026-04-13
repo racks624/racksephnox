@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class MachineController extends Controller
 {
+    /**
      * Get all active machines (authenticated)
+     */
     public function index()
     {
         $machines = Cache::remember('api_machines_all', 300, function () {
@@ -33,7 +35,9 @@ class MachineController extends Controller
         ]);
     }
 
+    /**
      * Get public machine list (no auth required)
+     */
     public function publicList()
     {
         $machines = Machine::where('is_active', true)->get()->map(function ($machine) {
@@ -58,7 +62,9 @@ class MachineController extends Controller
         ]);
     }
 
+    /**
      * Get single machine details
+     */
     public function show($code)
     {
         $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
@@ -69,7 +75,9 @@ class MachineController extends Controller
         ]);
     }
 
+    /**
      * Get public machine details (no auth)
+     */
     public function publicShow($code)
     {
         $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
@@ -89,7 +97,9 @@ class MachineController extends Controller
         ]);
     }
 
+    /**
      * Invest in a machine
+     */
     public function invest(Request $request, Machine $machine)
     {
         $request->validate([
@@ -196,14 +206,15 @@ class MachineController extends Controller
         }
     }
 
+    /**
      * Get user's all machine investments
+     */
     public function myInvestments(Request $request)
     {
         $user = Auth::user();
         
         $query = MachineInvestment::where('user_id', $user->id)->with('machine');
         
-        // Filter by status
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
@@ -239,7 +250,37 @@ class MachineController extends Controller
         ]);
     }
 
+    /**
+     * Get investment status
+     */
+    public function status(MachineInvestment $investment)
+    {
+        if ($investment->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $investment->id,
+                'amount' => $investment->amount,
+                'daily_profit' => $investment->daily_profit,
+                'current_profit' => $investment->currentProfit(),
+                'total_return' => $investment->total_return,
+                'profit_credited' => $investment->profit_credited,
+                'start_date' => $investment->start_date->format('Y-m-d'),
+                'end_date' => $investment->end_date->format('Y-m-d'),
+                'days_elapsed' => $investment->daysElapsed(),
+                'days_remaining' => $investment->daysRemaining(),
+                'progress_percentage' => $investment->progressPercentage(),
+                'status' => $investment->status,
+            ]
+        ]);
+    }
+
+    /**
      * Get active investments only
+     */
     public function activeInvestments()
     {
         $user = Auth::user();
@@ -269,61 +310,22 @@ class MachineController extends Controller
         ]);
     }
 
-     * Get investment details
-    public function investmentDetails(MachineInvestment $investment)
-    {
-        if ($investment->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $investment->id,
-                'machine' => [
-                    'name' => $investment->machine->name,
-                    'code' => $investment->machine->code,
-                    'description' => $investment->machine->description,
-                ],
-                'vip_level' => $investment->vip_level,
-                'amount' => $investment->amount,
-                'daily_profit' => $investment->daily_profit,
-                'total_return' => $investment->total_return,
-                'profit_credited' => $investment->profit_credited,
-                'current_profit' => $investment->currentProfit(),
-                'remaining_profit' => $investment->total_return - $investment->amount - $investment->profit_credited,
-                'start_date' => $investment->start_date->format('Y-m-d'),
-                'end_date' => $investment->end_date->format('Y-m-d'),
-                'days_elapsed' => $investment->daysElapsed(),
-                'days_remaining' => $investment->daysRemaining(),
-                'progress_percentage' => $investment->progressPercentage(),
-                'status' => $investment->status,
-                'can_withdraw' => $investment->isActive(),
-            ]
-        ]);
-    }
-
+    /**
      * Get global machine statistics
+     */
     public function globalStats()
     {
         $stats = Cache::remember('api_machines_global_stats', 300, function () {
             $machines = Machine::where('is_active', true)->get();
-            
             $totalInvested = $machines->sum(function ($m) {
                 return $m->investments()->sum('amount');
             });
-            
             $totalPaidOut = $machines->sum(function ($m) {
                 return $m->investments()->sum('total_return');
             });
-            
             $activeInvestments = $machines->sum(function ($m) {
                 return $m->activeInvestments()->count();
             });
-            
             $totalInvestors = MachineInvestment::distinct('user_id')->count('user_id');
             
             return [
@@ -343,34 +345,9 @@ class MachineController extends Controller
         ]);
     }
 
-     * Calculate returns (investment calculator)
-    public function calculateReturns(Request $request)
-    {
-        $request->validate([
-            'machine_code' => 'required|string|exists:machines,code',
-            'vip_level' => 'required|in:1,2,3,4,5,6',
-        ]);
-        
-        $machine = Machine::where('code', $request->machine_code)->first();
-        $amount = $machine->getVIPAmounts()[$request->vip_level];
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'machine' => $machine->name,
-                'vip_level' => $request->vip_level,
-                'investment_amount' => $amount,
-                'daily_profit' => $machine->getDailyProfit($amount, $request->vip_level),
-                'total_return' => $machine->getTotalReturn($amount, $request->vip_level),
-                'total_profit' => $machine->getTotalReturn($amount, $request->vip_level) - $amount,
-                'duration_days' => $machine->duration_days,
-                'roi_percentage' => $machine->growth_rate,
-                'apy' => round((pow(1 + $machine->getDailyProfit($amount, $request->vip_level) / $amount, 365) - 1) * 100, 2),
-            ]
-        ]);
-    }
-
+    /**
      * Format machine data for API response
+     */
     private function formatMachineData(Machine $machine, $includeDetails = false)
     {
         $user = Auth::user();
@@ -399,72 +376,3 @@ class MachineController extends Controller
         return $data;
     }
 }
-
-/**
- * @OA\Get(
- *     path="/api/v1/machines",
- *     summary="Get all active RX Machines",
- *     tags={"Machines"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Response(
- *         response=200,
- *         description="List of RX Machines with VIP tiers",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="data", type="array",
- *                 @OA\Items(
- *                     @OA\Property(property="id", type="integer", example=1),
- *                     @OA\Property(property="code", type="string", example="RX1"),
- *                     @OA\Property(property="name", type="string", example="RX1 – Aurora Machine"),
- *                     @OA\Property(property="vip_tiers", type="array",
- *                         @OA\Items(
- *                             @OA\Property(property="level", type="integer", example=1),
- *                             @OA\Property(property="name", type="string", example="Bronze"),
- *                             @OA\Property(property="amount", type="number", example=5300),
- *                             @OA\Property(property="daily_profit", type="number", example=94.64)
- *                         )
- *                     )
- *                 )
- *             )
- *         )
- *     )
- * )
- */
- 
-/**
- * @OA\Post(
- *     path="/api/v1/machines/{machine}/invest",
- *     summary="Invest in an RX Machine",
- *     tags={"Machines"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Parameter(
- *         name="machine",
- *         in="path",
- *         required=true,
- *         description="Machine ID",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"vip_level"},
- *             @OA\Property(property="vip_level", type="integer", enum={1,2,3,4,5,6}, example=1)
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Investment successful",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Investment successful!"),
- *             @OA\Property(property="data", type="object",
- *                 @OA\Property(property="amount", type="number", example=5300),
- *                 @OA\Property(property="daily_profit", type="number", example=94.64),
- *                 @OA\Property(property="total_return", type="number", example=6625)
- *             )
- *         )
- *     ),
- *     @OA\Response(response=422, description="Validation error"),
- *     @OA\Response(response=401, description="Unauthorized")
- * )
- */

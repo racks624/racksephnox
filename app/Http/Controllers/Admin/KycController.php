@@ -11,7 +11,10 @@ class KycController extends Controller
 {
     public function index()
     {
-        $documents = KycDocument::with('user')->where('status', 'pending')->latest()->get();
+        $documents = KycDocument::with('user')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'asc')
+            ->get();
         return view('admin.kyc.index', compact('documents'));
     }
 
@@ -22,29 +25,28 @@ class KycController extends Controller
 
     public function approve(KycDocument $document)
     {
-        $document->update([
-            'status' => 'verified',
-            'verified_at' => now(),
-        ]);
-        $document->user->update(['is_verified' => true, 'kyc_level' => 'tier1']);
+        $document->status = 'verified';
+        $document->save();
 
-        // Clear caches
-        Cache::forget('kyc_docs_' . $document->user_id);
-        Cache::forget('admin_stats');
+        // Update user verification status
+        $user = $document->user;
+        $user->is_verified = true;
+        $user->kyc_status = 'verified';
+        $user->save();
+
+        Cache::forget('kyc_docs_' . $user->id);
 
         return redirect()->route('admin.kyc.index')->with('success', 'KYC approved.');
     }
 
     public function reject(Request $request, KycDocument $document)
     {
-        $request->validate(['reason' => 'required|string']);
-        $document->update([
-            'status' => 'rejected',
-            'rejection_reason' => $request->reason,
-        ]);
+        $request->validate(['reason' => 'required|string|max:255']);
+        $document->status = 'rejected';
+        $document->rejection_reason = $request->reason;
+        $document->save();
 
         Cache::forget('kyc_docs_' . $document->user_id);
-        Cache::forget('admin_stats');
 
         return redirect()->route('admin.kyc.index')->with('success', 'KYC rejected.');
     }

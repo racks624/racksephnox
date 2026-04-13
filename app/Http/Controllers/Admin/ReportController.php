@@ -4,157 +4,95 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Investment;
+use App\Models\MachineInvestment;
 use App\Models\Transaction;
 use App\Models\TradeOrder;
-use App\Models\MachineInvestment;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Barryvdh\DomPDF\Facade\Pdf;
+use League\Csv\Writer;
 
 class ReportController extends Controller
 {
     public function index()
     {
-        // Summary stats
         $totalUsers = User::count();
         $verifiedUsers = User::where('is_verified', true)->count();
-        $totalInvested = Investment::where('status', 'active')->sum('amount');
-        $totalWithdrawn = Transaction::where('type', 'withdrawal')->sum('amount');
+        $totalInvested = MachineInvestment::sum('amount');
+        $totalTradingVolume = TradeOrder::where('status', 'completed')->sum('filled_kes');
         $totalDeposited = Transaction::where('type', 'deposit')->sum('amount');
-        $totalTradingVolume = TradeOrder::where('status', 'completed')->sum('amount_kes');
-        $totalMachineInvested = MachineInvestment::where('status', 'active')->sum('amount');
+        $totalWithdrawn = abs(Transaction::where('type', 'withdrawal')->sum('amount'));
+        $totalMachineInvested = MachineInvestment::sum('amount');
 
-        // Monthly data for charts
-        $monthlyInvestments = Investment::selectRaw('strftime("%Y-%m", created_at) as month, SUM(amount) as total')
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->limit(12)
-            ->get();
+        $monthlyInvestments = MachineInvestment::select(
+                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("SUM(amount) as total")
+            )->groupBy('month')->orderBy('month')->get();
 
-        $monthlyUsers = User::selectRaw('strftime("%Y-%m", created_at) as month, COUNT(*) as total')
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->limit(12)
-            ->get();
+        $monthlyUsers = User::select(
+                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("COUNT(*) as total")
+            )->groupBy('month')->orderBy('month')->get();
 
         $monthlyTradingVolume = TradeOrder::where('status', 'completed')
-            ->selectRaw('strftime("%Y-%m", created_at) as month, SUM(amount_kes) as total')
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->limit(12)
-            ->get();
+            ->select(
+                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("SUM(filled_kes) as total")
+            )->groupBy('month')->orderBy('month')->get();
 
         return view('admin.reports.index', compact(
-            'totalUsers', 'verifiedUsers', 'totalInvested', 'totalWithdrawn',
-            'totalDeposited', 'totalTradingVolume', 'totalMachineInvested',
+            'totalUsers', 'verifiedUsers', 'totalInvested', 'totalTradingVolume',
+            'totalDeposited', 'totalWithdrawn', 'totalMachineInvested',
             'monthlyInvestments', 'monthlyUsers', 'monthlyTradingVolume'
         ));
     }
 
-    // CSV Exports
     public function exportUsers()
     {
-        $users = User::with('wallet')->latest()->get();
-        return $this->csvResponse($users, 'users', [
-            'ID', 'Name', 'Email', 'Phone', 'Verified', 'Admin', 'Balance', 'Joined'
-        ], function ($user) {
-            return [
-                $user->id,
-                $user->name,
-                $user->email,
-                $user->phone,
-                $user->is_verified ? 'Yes' : 'No',
-                $user->is_admin ? 'Yes' : 'No',
-                $user->wallet->balance,
-                $user->created_at->format('Y-m-d H:i:s'),
-            ];
-        });
+        $users = User::all(['id', 'name', 'email', 'phone', 'created_at']);
+        return $this->csvResponse($users, 'users.csv');
     }
 
     public function exportTransactions()
     {
-        $transactions = Transaction::with('user')->latest()->get();
-        return $this->csvResponse($transactions, 'transactions', [
-            'ID', 'User', 'Type', 'Amount', 'Balance After', 'Description', 'Date'
-        ], function ($tx) {
-            return [
-                $tx->id,
-                $tx->user->name ?? 'N/A',
-                $tx->type,
-                $tx->amount,
-                $tx->balance_after,
-                $tx->description,
-                $tx->created_at->format('Y-m-d H:i:s'),
-            ];
-        });
+        $transactions = Transaction::with('user')->get(['id', 'user_id', 'type', 'amount', 'status', 'description', 'created_at']);
+        return $this->csvResponse($transactions, 'transactions.csv');
     }
 
     public function exportInvestments()
     {
-        $investments = Investment::with('user', 'plan')->latest()->get();
-        return $this->csvResponse($investments, 'investments', [
-            'ID', 'User', 'Plan', 'Amount', 'Daily Profit', 'Status', 'Start Date', 'End Date'
-        ], function ($inv) {
-            return [
-                $inv->id,
-                $inv->user->name ?? 'N/A',
-                $inv->plan->name,
-                $inv->amount,
-                $inv->daily_profit,
-                $inv->status,
-                $inv->start_date->format('Y-m-d'),
-                $inv->end_date->format('Y-m-d'),
-            ];
-        });
+        $investments = MachineInvestment::with('user', 'machine')->get();
+        return $this->csvResponse($investments, 'investments.csv');
     }
 
     public function exportTrading()
     {
-        $orders = TradeOrder::with('user')->where('status', 'completed')->latest()->get();
-        return $this->csvResponse($orders, 'trading', [
-            'ID', 'User', 'Side', 'Order Type', 'Amount (BTC)', 'Price', 'Total (KES)', 'Date'
-        ], function ($order) {
-            return [
-                $order->id,
-                $order->user->name ?? 'N/A',
-                $order->side,
-                $order->order_type,
-                $order->filled_amount,
-                $order->price_per_btc,
-                $order->filled_kes,
-                $order->created_at->format('Y-m-d H:i:s'),
-            ];
-        });
+        $trades = TradeOrder::with('user')->where('status', 'completed')->get();
+        return $this->csvResponse($trades, 'trades.csv');
     }
 
-    // PDF Exports (requires barryvdh/laravel-dompdf)
     public function exportPdfReport()
     {
+        // Simple summary JSON (PDF can be added later with DomPDF)
         $data = [
-            'totalUsers' => User::count(),
-            'totalInvested' => Investment::sum('amount'),
-            'totalDeposited' => Transaction::where('type', 'deposit')->sum('amount'),
-            'date' => now()->format('Y-m-d H:i'),
+            'total_users' => User::count(),
+            'total_invested' => MachineInvestment::sum('amount'),
+            'total_trading_volume' => TradeOrder::sum('filled_kes'),
+            'report_date' => now()->toDateTimeString(),
         ];
-        $pdf = Pdf::loadView('pdf.report', $data);
-        return $pdf->download('report_' . date('Y-m-d') . '.pdf');
+        return response()->json($data);
     }
 
-    private function csvResponse($data, $filename, $headers, $callback)
+    protected function csvResponse($data, $filename)
     {
-        $response = new StreamedResponse(function () use ($data, $headers, $callback) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, $headers);
+        $csv = Writer::createFromString('');
+        if ($data->isNotEmpty()) {
+            $csv->insertOne(array_keys($data->first()->getAttributes()));
             foreach ($data as $row) {
-                fputcsv($handle, $callback($row));
+                $csv->insertOne($row->toArray());
             }
-            fclose($handle);
-        }, 200, [
+        }
+        return response($csv->toString(), 200, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '_' . date('Y-m-d') . '.csv"',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
         ]);
-        return $response;
     }
 }

@@ -63,6 +63,43 @@ class SocialTradingController extends Controller
     }
 
     /**
+     * Show edit profile form
+     */
+    public function editProfile()
+    {
+        $user = Auth::user();
+        $profile = $user->tradingProfile ?? new TradingProfile();
+        
+        return view('social-trading.edit-profile', compact('profile', 'user'));
+    }
+
+    /**
+     * Update trading profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|string|max:50|unique:trading_profiles,username,' . Auth::id() . ',user_id',
+            'bio' => 'nullable|string|max:500',
+            'is_public' => 'boolean',
+            'allow_copy_trading' => 'boolean',
+        ]);
+
+        $profile = TradingProfile::updateOrCreate(
+            ['user_id' => Auth::id()],
+            [
+                'username' => $request->username,
+                'bio' => $request->bio,
+                'is_public' => $request->boolean('is_public', true),
+                'allow_copy_trading' => $request->boolean('allow_copy_trading', true),
+            ]
+        );
+
+        return redirect()->route('social-trading.profile', $profile->username)
+            ->with('success', 'Profile updated successfully.');
+    }
+
+    /**
      * Follow a trader
      */
     public function follow(Request $request, User $trader)
@@ -104,7 +141,7 @@ class SocialTradingController extends Controller
     public function unfollow(User $trader)
     {
         $user = Auth::user();
-        
+
         FollowedTrader::where('follower_id', $user->id)
             ->where('trader_id', $trader->id)
             ->delete();
@@ -165,31 +202,5 @@ class SocialTradingController extends Controller
             ->paginate(20);
 
         return view('social-trading.history', compact('copiedTrades', 'tradesCopiedToMe'));
-    }
-
-    /**
-     * Create or update trading profile
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'username' => 'required|string|max:50|unique:trading_profiles,username,' . Auth::id() . ',user_id',
-            'bio' => 'nullable|string|max:500',
-            'is_public' => 'boolean',
-            'allow_copy_trading' => 'boolean',
-        ]);
-
-        $profile = TradingProfile::updateOrCreate(
-            ['user_id' => Auth::id()],
-            [
-                'username' => $request->username,
-                'bio' => $request->bio,
-                'is_public' => $request->boolean('is_public', true),
-                'allow_copy_trading' => $request->boolean('allow_copy_trading', true),
-            ]
-        );
-
-        return redirect()->route('social-trading.profile', $profile->username)
-            ->with('success', 'Profile updated successfully.');
     }
 }

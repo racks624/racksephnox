@@ -20,43 +20,24 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             <div class="card-golden p-4 text-center group hover:scale-105 transition">
                 <div class="text-3xl mb-2">🏦</div>
-                <p class="text-2xl font-bold text-gold" x-text="globalStats.total_traders">0</p>
+                <p class="text-2xl font-bold text-gold">{{ $topTraders->count() }}</p>
                 <p class="text-xs text-ivory/60">Active Traders</p>
             </div>
             <div class="card-golden p-4 text-center group hover:scale-105 transition">
                 <div class="text-3xl mb-2">📊</div>
-                <p class="text-2xl font-bold text-green-400" x-text="'KES ' + formatNumber(globalStats.total_pnl)">0</p>
+                <p class="text-2xl font-bold text-green-400">KES {{ number_format($topTraders->sum('total_pnl'), 2) }}</p>
                 <p class="text-xs text-ivory/60">Total P&L</p>
             </div>
             <div class="card-golden p-4 text-center group hover:scale-105 transition">
                 <div class="text-3xl mb-2">🎯</div>
-                <p class="text-2xl font-bold text-gold" x-text="globalStats.avg_win_rate + '%'">0</p>
+                <p class="text-2xl font-bold text-gold">{{ number_format($topTraders->avg('win_rate'), 1) }}%</p>
                 <p class="text-xs text-ivory/60">Avg Win Rate</p>
             </div>
             <div class="card-golden p-4 text-center group hover:scale-105 transition">
                 <div class="text-3xl mb-2">👥</div>
-                <p class="text-2xl font-bold text-gold" x-text="formatNumber(globalStats.total_followers)">0</p>
+                <p class="text-2xl font-bold text-gold">{{ number_format($topTraders->sum('followers_count')) }}</p>
                 <p class="text-xs text-ivory/60">Total Followers</p>
             </div>
-        </div>
-
-        <!-- Filter Tabs -->
-        <div class="flex flex-wrap gap-2 mb-6 border-b border-gold/30 pb-4">
-            <button @click="activeFilter = 'all'" :class="{'bg-gold/20 text-gold': activeFilter === 'all'}" class="luxury-tab px-6 py-2 rounded-full transition">
-                🏆 All Traders
-            </button>
-            <button @click="activeFilter = 'top_pnl'" :class="{'bg-gold/20 text-gold': activeFilter === 'top_pnl'}" class="luxury-tab px-6 py-2 rounded-full transition">
-                📈 Top P&L
-            </button>
-            <button @click="activeFilter = 'top_winrate'" :class="{'bg-gold/20 text-gold': activeFilter === 'top_winrate'}" class="luxury-tab px-6 py-2 rounded-full transition">
-                🎯 Top Win Rate
-            </button>
-            <button @click="activeFilter = 'most_followed'" :class="{'bg-gold/20 text-gold': activeFilter === 'most_followed'}" class="luxury-tab px-6 py-2 rounded-full transition">
-                ⭐ Most Followed
-            </button>
-            <button @click="activeFilter = 'rising'" :class="{'bg-gold/20 text-gold': activeFilter === 'rising'}" class="luxury-tab px-6 py-2 rounded-full transition">
-                📈 Rising Stars
-            </button>
         </div>
 
         <!-- Leaderboard Table -->
@@ -71,7 +52,6 @@
                             <th class="px-4 py-4 text-left">Win Rate</th>
                             <th class="px-4 py-4 text-left">Total Trades</th>
                             <th class="px-4 py-4 text-left">Followers</th>
-                            <th class="px-4 py-4 text-left">ROI</th>
                             <th class="px-4 py-4 text-center">Action</th>
                         </tr>
                     </thead>
@@ -92,19 +72,12 @@
                             <td class="px-4 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-12 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 flex items-center justify-center">
-                                        @if($trader->avatar)
-                                            <img src="{{ asset('storage/' . $trader->avatar) }}" class="w-12 h-12 rounded-full object-cover">
-                                        @else
-                                            <i class="fas fa-user-circle text-2xl text-white"></i>
-                                        @endif
+                                        <i class="fas fa-user-circle text-2xl text-white"></i>
                                     </div>
                                     <div>
                                         <div class="font-semibold text-gold">{{ $trader->username }}</div>
                                         <div class="text-xs text-ivory/50">{{ $trader->user->name }}</div>
                                     </div>
-                                    @if($trader->is_verified)
-                                        <span class="text-xs text-blue-400"><i class="fas fa-check-circle"></i> Verified</span>
-                                    @endif
                                 </div>
                             </td>
                             <td class="px-4 py-4">
@@ -127,12 +100,6 @@
                                     <span class="text-gold">{{ number_format($trader->followers_count) }}</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-4">
-                                @php
-                                    $roi = $trader->total_pnl > 0 ? ($trader->total_pnl / 100000) * 100 : 0;
-                                @endphp
-                                <span class="text-green-400 font-semibold">{{ number_format($roi, 1) }}%</span>
-                            </td>
                             <td class="px-4 py-4 text-center">
                                 <button @click.stop="followTrader({{ $trader->user_id }}, '{{ $trader->username }}')" class="btn-golden text-sm py-1.5 px-4">
                                     <i class="fas fa-copy mr-1"></i> Copy
@@ -141,7 +108,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-12 text-ivory/50">
+                            <td colspan="7" class="text-center py-12 text-ivory/50">
                                 <i class="fas fa-chart-line text-4xl mb-3 block"></i>
                                 No traders found. Be the first!
                             </td>
@@ -156,7 +123,7 @@
         <div class="mt-10 card-golden p-8 text-center bg-gradient-to-r from-gold-500/10 to-gold-600/10">
             <h3 class="text-2xl font-bold golden-title mb-2">Become a Master Trader</h3>
             <p class="text-ivory/70 mb-4">Share your trades, build a following, and earn from copy trading commissions</p>
-            <a href="{{ route('social-trading.profile.edit') }}" class="btn-golden inline-flex items-center gap-2">
+            <a href="{{ route('profile.edit') }}" class="btn-golden inline-flex items-center gap-2">
                 <i class="fas fa-rocket"></i> Start Your Journey
             </a>
         </div>
@@ -171,33 +138,6 @@
 <script>
 function leaderboardManager() {
     return {
-        activeFilter: 'all',
-        globalStats: {
-            total_traders: {{ $topTraders->count() }},
-            total_pnl: {{ $topTraders->sum('total_pnl') }},
-            avg_win_rate: {{ $topTraders->avg('win_rate') }},
-            total_followers: {{ $topTraders->sum('followers_count') }}
-        },
-        
-        init() {
-            // Animate stats on load
-            this.animateNumbers();
-        },
-        
-        animateNumbers() {
-            // Add animation to stat cards
-            const elements = document.querySelectorAll('.stat-value');
-            elements.forEach(el => {
-                const final = parseInt(el.innerText);
-                let current = 0;
-                const interval = setInterval(() => {
-                    if (current >= final) clearInterval(interval);
-                    el.innerText = current;
-                    current += Math.ceil(final / 50);
-                }, 20);
-            });
-        },
-        
         async followTrader(userId, username) {
             if (!confirm(`✨ Copy ${username}'s trades?\n\nYou will automatically copy ${username}'s trades with 100% ratio.`)) return;
             
@@ -221,26 +161,8 @@ function leaderboardManager() {
             } catch (error) {
                 alert('❌ Error: ' + error.message);
             }
-        },
-        
-        formatNumber(num) {
-            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-            return num.toLocaleString();
         }
     }
 }
 </script>
-
-<style>
-.luxury-tab {
-    background: rgba(212, 175, 55, 0.1);
-    color: #d4af37;
-    transition: all 0.3s ease;
-}
-.luxury-tab:hover {
-    background: rgba(212, 175, 55, 0.2);
-    transform: translateY(-2px);
-}
-</style>
 @endsection

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\WalletBalanceUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Wallet extends Model
 {
@@ -29,13 +30,17 @@ class Wallet extends Model
 
     public function credit($amount, $description, $type = 'credit')
     {
-        return \DB::transaction(function () use ($amount, $description, $type) {
+        return DB::transaction(function () use ($amount, $description, $type) {
             $this->increment('balance', $amount);
+
             return $this->transactions()->create([
-                'type' => $type,
-                'amount' => $amount,
+                'user_id'       => $this->user_id,
+                'wallet_id'     => $this->id,
+                'type'          => $type,
+                'amount'        => $amount,
                 'balance_after' => $this->balance,
-                'description' => $description,
+                'description'   => $description,
+                'status'        => 'completed',
             ]);
         });
     }
@@ -45,13 +50,18 @@ class Wallet extends Model
         if ($this->balance < $amount) {
             throw new \Exception('Insufficient balance');
         }
-        return \DB::transaction(function () use ($amount, $description, $type) {
+
+        return DB::transaction(function () use ($amount, $description, $type) {
             $this->decrement('balance', $amount);
+
             return $this->transactions()->create([
-                'type' => $type,
-                'amount' => -$amount,
+                'user_id'       => $this->user_id,
+                'wallet_id'     => $this->id,
+                'type'          => $type,
+                'amount'        => -$amount,
                 'balance_after' => $this->balance,
-                'description' => $description,
+                'description'   => $description,
+                'status'        => 'completed',
             ]);
         });
     }

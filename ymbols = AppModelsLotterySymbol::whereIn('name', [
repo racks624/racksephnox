@@ -1,0 +1,18 @@
+[90m= [39m[34;4mApp\Models\LotteryGame[39;24m {#8354
+    [34mid[39m: [35m1[39m,
+    [34mname[39m: [32m"[39m[32mCosmic Slot[39m[32m"[39m,
+    [34mdescription[39m: [32m"[39m[32m3‑reel slot with divine frequencies and wild seals.[39m[32m"[39m,
+    [34mticket_price[39m: [35m10[39m,
+    [34msettings[39m: [32m"[39m[32m{[39m\"[32mreels[39m\"[32m:3,[39m\"[32mrows[39m\"[32m:1}[39m[32m"[39m,
+    [34mis_active[39m: [35m1[39m,
+    [34mcreated_at[39m: [32m"[39m[32m2026-04-12 07:02:22[39m[32m"[39m,
+    [34mupdated_at[39m: [32m"[39m[32m2026-04-13 19:26:17[39m[32m"[39m,
+    [34mprogressive_jackpot[39m: [35m1000.5[39m,
+    [34mmin_bet[39m: [35m10[39m,
+    [34mmax_bet[39m: [35m1000[39m,
+    [34mreel_config[39m: [36mnull[39m,
+    [34mpaylines[39m: [36mnull[39m,
+    [34mbonus_symbol_id[39m: [36mnull[39m,
+    [34mfree_spins_award[39m: [35m0[39m,
+    [34mjackpot_contribution_rate[39m: [35m5[39m,
+  }

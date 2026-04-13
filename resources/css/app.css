@@ -265,3 +265,24 @@ h1, .golden-title {
     font-size: 1.5em;
     opacity: 0.6;
 }
+
+/* ============================================
+   Global performance & smooth scrolling
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Reduce repaints on scroll – hint browser */
+body {
+    will-change: scroll-position;
+}
+
+/* Lazy images fade-in */
+img[loading="lazy"] {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+img[loading="lazy"].loaded {
+    opacity: 1;
+}
