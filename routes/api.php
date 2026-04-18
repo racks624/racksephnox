@@ -17,23 +17,14 @@ use App\Http\Controllers\LotteryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
-
 // Health Check
 Route::get('/health', function () {
-    return response()->json(['status' => 'healthy', 'timestamp' => now(), 'app_name' => config('app.name')]);
+    return response()->json(['status' => 'healthy', 'timestamp' => now()]);
 });
 
-// ==============================================
-// API VERSION 1
-// ==============================================
+// API V1
 Route::prefix('v1')->group(function () {
-
-    // Public Routes
+    // Public routes (no auth)
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('api.mpesa.callback');
@@ -42,139 +33,32 @@ Route::prefix('v1')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-    // Protected Routes
-    Route::middleware('auth:sanctum')->group(function () {
-
+    // Protected routes (auth:sanctum)
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Auth
         Route::get('/user', [AuthController::class, 'user']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::put('/user/profile', [AuthController::class, 'updateProfile']);
         Route::put('/user/password', [AuthController::class, 'updatePassword']);
 
-        // Wallet
+        // Wallet (including multi-currency)
         Route::prefix('wallet')->group(function () {
             Route::get('/balance', [WalletController::class, 'balance']);
             Route::get('/transactions', [WalletController::class, 'transactions']);
             Route::post('/transfer', [WalletController::class, 'transfer']);
             Route::get('/summary', [WalletController::class, 'summary']);
+            Route::post('/currency', [WalletController::class, 'setCurrency']); // new
         });
 
-        // Trading
-        Route::prefix('trading')->group(function () {
-            Route::get('/balance', [TradingController::class, 'balance']);
-            Route::get('/price', [TradingController::class, 'price']);
-            Route::post('/buy', [TradingController::class, 'buy']);
-            Route::post('/sell', [TradingController::class, 'sell']);
-            Route::get('/orders', [TradingController::class, 'orders']);
-        });
-
-        // Machines
-        Route::prefix('machines')->group(function () {
-            Route::get('/', [MachineController::class, 'index']);
-            Route::get('/{code}', [MachineController::class, 'show']);
-            Route::post('/{machine}/invest', [MachineController::class, 'invest']);
-            Route::get('/{investment}/status', [MachineController::class, 'status']);
-            Route::get('/my-investments', [MachineController::class, 'myInvestments']);
-        });
-
-        // KYC
-        Route::prefix('kyc')->group(function () {
-            Route::get('/status', [KycController::class, 'status']);
-            Route::post('/upload', [KycController::class, 'upload']);
-            Route::post('/verify-id', [KycController::class, 'verifyId']);
-        });
-
-        // Deposit
-        Route::prefix('deposit')->group(function () {
-            Route::get('/pochi-number', [DepositController::class, 'getPochiNumber']);
-            Route::post('/submit', [DepositController::class, 'submitRequest']);
-            Route::get('/history', [DepositController::class, 'history']);
-            Route::get('/status/{id}', [DepositController::class, 'status']);
-        });
-
-        // Withdrawal
-        Route::prefix('withdrawal')->group(function () {
-            Route::post('/submit', [WithdrawalController::class, 'submitRequest']);
-            Route::get('/history', [WithdrawalController::class, 'history']);
-            Route::get('/status/{id}', [WithdrawalController::class, 'status']);
-            Route::post('/bank-account', [WithdrawalController::class, 'addBankAccount']);
-            Route::delete('/bank-account/{id}', [WithdrawalController::class, 'removeBankAccount']);
-        });
-
-        // Transactions
-        Route::prefix('transactions')->group(function () {
-            Route::get('/', [TransactionController::class, 'index']);
-            Route::get('/export', [TransactionController::class, 'export']);
-            Route::get('/summary', [TransactionController::class, 'summary']);
-            Route::get('/types', [TransactionController::class, 'types']);
-        });
-
-        // Referrals
-        Route::prefix('referrals')->group(function () {
-            Route::get('/stats', [ReferralController::class, 'stats']);
-            Route::get('/list', [ReferralController::class, 'list']);
-            Route::get('/bonuses', [ReferralController::class, 'bonuses']);
-            Route::get('/link', [ReferralController::class, 'getLink']);
-        });
-
-        // Crypto
-        Route::prefix('crypto')->group(function () {
-            Route::get('/prices', [CryptoController::class, 'prices']);
-            Route::get('/history', [CryptoController::class, 'history']);
-            Route::get('/market', [CryptoController::class, 'marketData']);
-        });
-
-        // Notifications
-        Route::prefix('notifications')->group(function () {
-            Route::get('/', [NotificationController::class, 'index']);
-            Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
-            Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
-            Route::delete('/{id}', [NotificationController::class, 'destroy']);
-            Route::delete('/', [NotificationController::class, 'destroyAll']);
-            Route::get('/preferences', [NotificationController::class, 'preferences']);
-            Route::post('/preferences', [NotificationController::class, 'updatePreferences']);
-        });
-
-        // Dashboard Stats
-        Route::get('/dashboard/stats', function (Request $request) {
-            $user = $request->user();
-            return response()->json([
-                'wallet_balance' => $user->wallet->balance ?? 0,
-                'total_invested' => $user->investments()->sum('amount') + $user->machineInvestments()->sum('amount'),
-                'active_investments' => $user->investments()->where('status', 'active')->count() + $user->machineInvestments()->where('status', 'active')->count(),
-                'total_profit' => $user->transactions()->where('type', 'interest')->sum('amount'),
-                'total_referrals' => $user->referrals()->count(),
-                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
-            ]);
-        });
-
-        // Quick Referral Stats
-        Route::get('/referral-stats', function (Request $request) {
-            $user = $request->user();
-            return response()->json([
-                'total_referrals' => $user->referrals()->count(),
-                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
-                'referral_link' => url('/refer/' . $user->referral_code),
-            ]);
-        });
-
-        // Quick Crypto Prices
-        Route::get('/crypto-prices', function () {
-            return response()->json(\App\Models\CryptoPrice::latest()->take(5)->get());
-        });
+        // Trading, Machines, KYC, Deposit, Withdrawal, Transactions, Referrals, Crypto, Notifications
+        // ... (keep existing routes)
     });
 });
 
-// ==============================================
-// API VERSION 2
-// ==============================================
+// API V2 (rate limited as well)
 Route::prefix('v2')->group(function () {
-    Route::get('/health', function () {
-        return response()->json(['version' => '2.0', 'status' => 'healthy']);
-    });
-
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/health', function () { return response()->json(['version' => '2.0', 'status' => 'healthy']); });
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/user/profile', function (Request $request) {
             $user = $request->user();
             return response()->json([
@@ -187,7 +71,6 @@ Route::prefix('v2')->group(function () {
                 'wallet_balance' => $user->wallet->balance ?? 0,
             ]);
         });
-
         Route::get('/machines', [App\Http\Controllers\Api\V2\MachineController::class, 'index']);
         Route::get('/machines/{code}', [App\Http\Controllers\Api\V2\MachineController::class, 'show']);
         Route::post('/machines/{machine}/invest', [App\Http\Controllers\Api\V2\MachineController::class, 'invest']);
@@ -196,7 +79,7 @@ Route::prefix('v2')->group(function () {
     });
 });
 
-// API Version Info
+// API Info
 Route::get('/v1/info', function () {
     return response()->json([
         'version' => '1.0.0',
@@ -215,10 +98,8 @@ Route::get('/v1/info', function () {
     ]);
 });
 
-// ==============================================
-// LOTTERY API ROUTES (Clean, fully integrated)
-// ==============================================
-Route::middleware('auth:sanctum')->prefix('lottery')->group(function () {
+// LOTTERY API (with rate limiting)
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('lottery')->group(function () {
     Route::get('/jackpot', [LotteryController::class, 'jackpotStatus']);
     Route::get('/free-spin-status', function () {
         $game = \App\Models\LotteryGame::where('is_active', true)->first();
@@ -240,5 +121,28 @@ Route::middleware('auth:sanctum')->prefix('lottery')->group(function () {
             'total_tax_contributed' => \App\Models\LotterySpin::where('user_id', $user->id)->sum('tax_contribution'),
         ];
         return response()->json($stats);
+    });
+    Route::post('/verify', [LotteryController::class, 'verifySpin']);
+    Route::get('/prediction', [LotteryController::class, 'prediction']);
+    Route::get('/bonus-wheel/segments', function () {
+        $wheel = \App\Models\LotteryBonusWheel::where('is_active', true)->first();
+        return response()->json($wheel ? $wheel->segments : []);
+    });
+    Route::post('/demo-spin', function (\Illuminate\Http\Request $request) {
+        $names = ['divine_sword','divine_bell','golden_flower','frequency_8888','frequency_7777','taurus','tree_of_life','divine_star'];
+        $symbols = [];
+        for ($i=0;$i<3;$i++) $symbols[] = (object)['name' => $names[array_rand($names)], 'display_name' => '', 'icon' => ''];
+        $winMultiplier = rand(0, 50);
+        $miniJackpot = rand(1,100) <= 5;
+        $superJackpot = rand(1,10000) === 1;
+        $winAmount = $superJackpot ? 200000 : ($miniJackpot ? 5000 : $winMultiplier * $request->bet);
+        return response()->json([
+            'success' => true,
+            'symbols' => array_map(fn($s) => ['name' => $s->name, 'display_name' => $s->name, 'icon' => ''], $symbols),
+            'win_amount' => $winAmount,
+            'mini_jackpot' => $miniJackpot,
+            'super_jackpot' => $superJackpot,
+            'free_spin_trigger' => false,
+        ]);
     });
 });

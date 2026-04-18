@@ -1,0 +1,15 @@
+.env
+.git
+.gitignore
+Dockerfile
+.dockerignore
+fly.toml
+docker/
+storage/
+vendor/
+node_modules/
+tests/
+.phpunit.cache
+*.log
+*.sqlite
+*.pid

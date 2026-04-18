@@ -7,30 +7,31 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    protected $commands = [
-        \App\Console\Commands\AccrueInterest::class,
-        \App\Console\Commands\AccrueMachineProfits::class,
-        \App\Console\Commands\SyncCryptoPrices::class,
-        \App\Console\Commands\KycApprove::class,
-        \App\Console\Commands\KycReject::class,
-        \App\Console\Commands\ForceKyc::class,
-        \App\Console\Commands\RecordBtcPrice::class,
-        \App\Console\Commands\MatchOrders::class,
-    ];
-
+    /**
+     * Define the application's command schedule.
+     */
     protected function schedule(Schedule $schedule): void
     {
-        // Run heavy tasks at low traffic times
-        $schedule->command('investments:accrue')->dailyAt('00:00')->withoutOverlapping();
-        $schedule->command('machines:accrue')->dailyAt('00:05')->withoutOverlapping();
-        $schedule->command('crypto:sync-prices')->everyFiveMinutes()->withoutOverlapping();
-        $schedule->command('btc:record-price')->everyFiveMinutes()->withoutOverlapping();
-        $schedule->command('trading:match-orders')->everyMinute()->withoutOverlapping();
+        // Tournament prize distribution (daily at 00:30)
+        $schedule->command('lottery:distribute-prizes')->dailyAt('00:30');
+
+        // Update tournament rankings (every hour)
+        $schedule->command('lottery:update-rankings')->hourly();
+
+        // Clean up old lottery spins (keep last 30 days) – run daily
+        $schedule->command('lottery:cleanup-spins')->dailyAt('02:00');
+
+        // Cache warmup for lottery symbols (every 6 hours)
+        $schedule->command('lottery:warmup-cache')->everySixHours();
     }
 
+    /**
+     * Register the commands for the application.
+     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
+
         require base_path('routes/console.php');
     }
 }

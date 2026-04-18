@@ -15,7 +15,11 @@
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="border-b border-gold/30">
-                        <tr><th class="px-4 py-2 text-left">Rank</th><th class="px-4 py-2 text-left">User</th><th class="px-4 py-2 text-left">Total Won (KES)</th></tr>
+                        <tr>
+                            <th class="px-4 py-2 text-left">Rank</th>
+                            <th class="px-4 py-2 text-left">User</th>
+                            <th class="px-4 py-2 text-left">Total Won (KES)</th>
+                        </tr>
                     </thead>
                     <tbody>
                         @foreach($topWinners as $index => $winner)

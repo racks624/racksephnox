@@ -1,0 +1,54 @@
+/* Admin Panel Custom Styles */
+.admin-card {
+    background: rgba(15, 25, 35, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 1rem;
+    transition: all 0.2s;
+}
+.admin-card:hover {
+    border-color: rgba(212, 175, 55, 0.6);
+    transform: translateY(-2px);
+}
+.admin-sidebar {
+    background: linear-gradient(180deg, #0F172A 0%, #1E1B2E 100%);
+    border-right: 1px solid rgba(212, 175, 55, 0.2);
+}
+.admin-sidebar a.active {
+    background: rgba(212, 175, 55, 0.15);
+    border-left: 3px solid #D4AF37;
+    color: #D4AF37;
+}
+.scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #D4AF37;
+    border-radius: 4px;
+}
+.btn-golden {
+    background: linear-gradient(135deg, #D4AF37, #B8860B);
+    color: #0F172A;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+}
+.btn-golden:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+.input-golden {
+    background: rgba(15, 25, 35, 0.8);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    color: #F5F5F5;
+}
+.input-golden:focus {
+    outline: none;
+    border-color: #D4AF37;
+}

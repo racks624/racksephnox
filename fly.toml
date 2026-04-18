@@ -1,0 +1,46 @@
+app = "racksephnox"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  LOG_CHANNEL = "stack"
+  SESSION_DRIVER = "redis"
+  CACHE_DRIVER = "redis"
+  QUEUE_CONNECTION = "redis"
+  REDIS_URL = "redis://${REDIS_HOST}:6379"
+  DB_CONNECTION = "pgsql"
+  DB_HOST = "${POSTGRES_HOST}"
+  DB_PORT = "5432"
+  DB_DATABASE = "${POSTGRES_DB}"
+  DB_USERNAME = "${POSTGRES_USER}"
+  DB_PASSWORD = "${POSTGRES_PASSWORD}"
+  APP_URL = "https://${FLY_APP_NAME}.fly.dev"
+
+[experimental]
+  auto_rollback = true
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls"]
+
+  [[services.tcp_checks]]
+    interval = 15000
+    timeout = 2000
+    grace_period = 30s

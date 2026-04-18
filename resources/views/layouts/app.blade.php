@@ -44,3 +44,32 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
+<script>
+    window.switchCurrency = async function(currency) {
+        const res = await fetch('/api/wallet/currency', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify({ currency })
+        });
+        if (res.ok) location.reload();
+        else alert('Failed to switch currency');
+    }
+</script>
+<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+<script>
+    import Echo from 'laravel-echo';
+    window.Pusher = Pusher;
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: '{{ env("PUSHER_APP_KEY") }}',
+        wsHost: window.location.hostname,
+        wsPort: 6001,
+        forceTLS: false,
+        disableStats: true,
+    });
+    window.Echo.channel('lottery')
+        .listen('.jackpot.updated', (e) => {
+            const jackpotEl = document.getElementById('lottery-jackpot');
+            if (jackpotEl) jackpotEl.innerText = 'KES ' + e.jackpot.toLocaleString();
+        });
+</script>

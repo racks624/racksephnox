@@ -42,6 +42,9 @@ class LotteryController extends Controller
             'jackpot_contribution_rate' => 'numeric|min:0|max:100',
             'is_active' => 'boolean',
             'progressive_jackpot' => 'nullable|numeric',
+            'base_rtp' => 'numeric|min:0|max:100',
+            'vip_rtp' => 'numeric|min:0|max:100',
+            'promo_rtp' => 'numeric|min:0|max:100',
         ]);
         $game->update($validated);
         Cache::forget('lottery_symbols');

@@ -9,7 +9,8 @@ class LotteryGame extends Model
     protected $fillable = [
         'name', 'description', 'ticket_price', 'settings', 'is_active',
         'min_bet', 'max_bet', 'reel_config', 'paylines', 'bonus_symbol_id',
-        'free_spins_award', 'jackpot_contribution_rate', 'progressive_jackpot'
+        'free_spins_award', 'jackpot_contribution_rate', 'progressive_jackpot',
+        'base_rtp', 'vip_rtp', 'promo_rtp'
     ];
     protected $casts = [
         'settings' => 'array',
@@ -17,6 +18,9 @@ class LotteryGame extends Model
         'reel_config' => 'array',
         'paylines' => 'array',
         'progressive_jackpot' => 'decimal:2',
+        'base_rtp' => 'decimal:2',
+        'vip_rtp' => 'decimal:2',
+        'promo_rtp' => 'decimal:2',
     ];
 
     public function symbols()

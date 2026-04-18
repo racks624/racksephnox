@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\LotteryGame;
 use App\Models\LotterySpin;
+use App\Models\LotteryTournament;
 use App\Services\LotteryService;
+use App\Services\LotteryMissionService;
+use App\Services\LotteryBonusWheelService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,16 +29,29 @@ class LotteryController extends Controller
             ->with('user')
             ->take(5)
             ->get();
-        return view('lottery.index', compact('game', 'balance', 'history', 'canFreeSpin', 'freeSpinHours', 'leaderboard'));
+        $activeTournament = LotteryTournament::where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->first();
+        $missionService = new LotteryMissionService();
+        $missions = $missionService->getTodayMissions($user);
+        $completedMissions = collect($missions)->where('completed', true)->count();
+        $totalMissions = count($missions);
+        $bonusWheelService = new LotteryBonusWheelService();
+        $canSpinBonusWheel = $bonusWheelService->canSpin($user);
+        return view('lottery.index', compact(
+            'game', 'balance', 'history', 'canFreeSpin', 'freeSpinHours', 'leaderboard',
+            'activeTournament', 'completedMissions', 'totalMissions', 'canSpinBonusWheel'
+        ));
     }
 
     public function spin(Request $request)
     {
-        $request->validate(['bet' => 'required|numeric|min:1']);
+        $request->validate(['bet' => 'required|numeric|min:1', 'client_seed' => 'nullable|string']);
         $game = LotteryGame::where('is_active', true)->firstOrFail();
         $service = new LotteryService($game);
         try {
-            $result = $service->play(Auth::user(), $request->bet);
+            $result = $service->play(Auth::user(), $request->bet, false, $request->client_seed);
             return response()->json([
                 'success' => true,
                 'symbols' => array_map(fn($s) => ['name' => $s->name, 'display_name' => $s->display_name, 'icon' => $s->icon], $result['symbols']),
@@ -46,13 +62,16 @@ class LotteryController extends Controller
                 'free_spin_trigger' => $result['free_spin_trigger'],
                 'progressive_jackpot' => $result['progressive_jackpot'],
                 'new_balance' => Auth::user()->wallet->fresh()->balance,
+                'nonce' => $result['nonce'],
+                'client_seed' => $result['client_seed'],
+                'server_seed_hashed' => $result['server_seed_hashed'],
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 
-    public function freeSpin()
+    public function freeSpin(Request $request)
     {
         $game = LotteryGame::where('is_active', true)->firstOrFail();
         $service = new LotteryService($game);
@@ -60,7 +79,7 @@ class LotteryController extends Controller
             return response()->json(['success' => false, 'message' => 'Free spin already used today.'], 422);
         }
         try {
-            $result = $service->play(Auth::user(), 0, true);
+            $result = $service->play(Auth::user(), 0, true, $request->client_seed ?? null);
             return response()->json([
                 'success' => true,
                 'symbols' => array_map(fn($s) => ['name' => $s->name, 'display_name' => $s->display_name, 'icon' => $s->icon], $result['symbols']),
@@ -71,6 +90,9 @@ class LotteryController extends Controller
                 'free_spin_trigger' => $result['free_spin_trigger'],
                 'progressive_jackpot' => $result['progressive_jackpot'],
                 'new_balance' => Auth::user()->wallet->fresh()->balance,
+                'nonce' => $result['nonce'],
+                'client_seed' => $result['client_seed'],
+                'server_seed_hashed' => $result['server_seed_hashed'],
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -104,5 +126,24 @@ class LotteryController extends Controller
     {
         $game = LotteryGame::where('is_active', true)->first();
         return response()->json(['jackpot' => $game->progressive_jackpot ?? 1000]);
+    }
+
+    public function verifySpin(Request $request)
+    {
+        $request->validate(['spin_id' => 'required|exists:lottery_spins,id', 'server_seed' => 'required|string']);
+        $spin = LotterySpin::findOrFail($request->spin_id);
+        if ($spin->user_id !== Auth::id() && !Auth::user()->is_admin) abort(403);
+        $game = LotteryGame::where('is_active', true)->firstOrFail();
+        $service = new LotteryService($game);
+        $result = $service->verifySpin($spin, $request->server_seed);
+        return response()->json($result);
+    }
+
+    public function prediction()
+    {
+        $user = Auth::user();
+        $service = new \App\Services\LotteryPredictionService();
+        $prediction = $service->analyze($user);
+        return response()->json($prediction);
     }
 }

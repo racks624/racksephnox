@@ -244,6 +244,45 @@
             </div>
         </div>
 
+        <!-- Lottery Stats Widget (Personalized) -->
+        <div class="card-golden p-5 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gold">🎰 Your Cosmic Lottery Journey</h3>
+                <a href="{{ route('lottery.index') }}" class="text-sm text-gold-400 hover:text-gold">Play Now →</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Total Spins</p>
+                    <p class="text-2xl font-bold text-gold">{{ number_format($lotteryStats['total_spins']) }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Total Wagered</p>
+                    <p class="text-2xl font-bold text-gold">KES {{ number_format($lotteryStats['total_bet'], 2) }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Total Won</p>
+                    <p class="text-2xl font-bold text-green-400">KES {{ number_format($lotteryStats['total_win'], 2) }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Mini Jackpots</p>
+                    <p class="text-2xl font-bold text-pink-400">{{ $lotteryStats['mini_jackpots'] }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Super Jackpots</p>
+                    <p class="text-2xl font-bold text-gold">{{ $lotteryStats['super_jackpots'] }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-ivory/60 text-xs">Free Spins Left</p>
+                    <p class="text-2xl font-bold text-gold">{{ $lotteryStats['free_spins_available'] }}</p>
+                </div>
+            </div>
+            @if($tournamentRank)
+                <div class="mt-3 text-center text-sm text-gold-400">
+                    🏆 Tournament Rank: #{{ $tournamentRank }} – Keep spinning to climb!
+                </div>
+            @endif
+        </div>
+
         <!-- Trading Widget -->
         <div class="card-golden p-5 mt-6 group hover:scale-[1.02] transition-all">
             <div class="flex justify-between items-center mb-4">

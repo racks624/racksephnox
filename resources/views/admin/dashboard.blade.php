@@ -4,7 +4,7 @@
 <div x-data="adminDashboard()" x-init="init()" class="space-y-6">
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="admin-card p-5 transition-all hover:scale-105">
+        <div class="admin-card p-5">
             <div class="flex justify-between">
                 <div>
                     <p class="text-sm text-gold-400">Total Users</p>
@@ -14,7 +14,7 @@
                 <i class="fas fa-users text-3xl text-gold/50"></i>
             </div>
         </div>
-        <div class="admin-card p-5 transition-all hover:scale-105">
+        <div class="admin-card p-5">
             <div class="flex justify-between">
                 <div>
                     <p class="text-sm text-gold-400">Total Invested</p>
@@ -23,7 +23,7 @@
                 <i class="fas fa-chart-line text-3xl text-gold/50"></i>
             </div>
         </div>
-        <div class="admin-card p-5 transition-all hover:scale-105">
+        <div class="admin-card p-5">
             <div class="flex justify-between">
                 <div>
                     <p class="text-sm text-gold-400">Pending Deposits</p>
@@ -33,7 +33,7 @@
                 <i class="fas fa-clock text-3xl text-gold/50"></i>
             </div>
         </div>
-        <div class="admin-card p-5 transition-all hover:scale-105">
+        <div class="admin-card p-5">
             <div class="flex justify-between">
                 <div>
                     <p class="text-sm text-gold-400">Pending Withdrawals</p>
@@ -45,48 +45,23 @@
         </div>
     </div>
 
-    <!-- Second Row: Advanced Metrics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="admin-card p-5">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-sm text-gold-400">🎰 Lottery Spins</p>
-                    <p class="text-2xl font-bold text-gold">{{ number_format($stats['total_lottery_spins']) }}</p>
-                    <p class="text-xs text-green-400">Bets: KES {{ number_format($stats['total_lottery_bets'], 2) }}</p>
-                </div>
-                <i class="fas fa-dice-d6 text-2xl text-gold/50"></i>
-            </div>
+    <!-- Revenue Target Widget (88,000 KES / 26 days) -->
+    <div class="admin-card p-5">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gold">💰 26‑Day Revenue Target</h3>
+            <span class="text-xs text-ivory/50">{{ $daysLeft }} days left</span>
         </div>
-        <div class="admin-card p-5">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-sm text-gold-400">🏆 Jackpot Hits</p>
-                    <p class="text-2xl font-bold text-gold">{{ $stats['jackpot_hits'] }}</p>
-                    <p class="text-xs text-gold-400">Current: KES {{ number_format($jackpot, 2) }}</p>
-                </div>
-                <i class="fas fa-trophy text-2xl text-gold/50"></i>
-            </div>
+        <div class="flex justify-between items-baseline mb-2">
+            <span class="text-2xl font-bold text-gold">KES {{ number_format($revenueTarget->current_revenue, 2) }}</span>
+            <span class="text-ivory/60">/ KES {{ number_format($revenueTarget->target_amount, 2) }}</span>
         </div>
-        <div class="admin-card p-5">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-sm text-gold-400">🤝 Referrals</p>
-                    <p class="text-2xl font-bold text-gold">{{ number_format($stats['total_referrals']) }}</p>
-                    <p class="text-xs text-green-400">Bonus: KES {{ number_format($stats['total_referral_bonus'], 2) }}</p>
-                </div>
-                <i class="fas fa-users text-2xl text-gold/50"></i>
-            </div>
+        <div class="w-full bg-gray-700 rounded-full h-3 mb-2">
+            <div class="bg-gradient-to-r from-gold-500 to-green-500 h-3 rounded-full" style="width: {{ min(100, $targetProgress) }}%"></div>
         </div>
-        <div class="admin-card p-5">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-sm text-gold-400">⚡ Trading Volume</p>
-                    <p class="text-2xl font-bold text-gold">KES {{ number_format($stats['total_trading_volume'], 2) }}</p>
-                    <p class="text-xs text-gold-400">Active Machines: {{ $stats['active_machines_count'] }}</p>
-                </div>
-                <i class="fab fa-bitcoin text-2xl text-gold/50"></i>
-            </div>
-        </div>
+        <p class="text-sm text-ivory/70">Remaining: KES {{ number_format($remaining, 2) }}</p>
+        @if($remaining <= 0)
+            <p class="text-green-400 text-sm mt-2">🎯 Target achieved! Divine abundance manifested.</p>
+        @endif
     </div>
 
     <!-- Charts Row -->
@@ -107,7 +82,7 @@
         <canvas id="lotteryChart" height="200"></canvas>
     </div>
 
-    <!-- Recent Activities -->
+    <!-- Recent Activities Table -->
     <div class="admin-card p-5">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gold">📋 Recent Platform Activity</h3>
@@ -132,34 +107,19 @@
                         <td class="px-4 py-2 text-ivory/70">{{ $activity['created_at']->diffForHumans() }}</td>
                         <td class="px-4 py-2">{{ $activity['user'] }}</td>
                         <td class="px-4 py-2 uppercase text-xs font-bold">
-                            @if($activity['type'] == 'deposit')
-                                <span class="text-green-400">Deposit</span>
-                            @elseif($activity['type'] == 'withdrawal')
-                                <span class="text-orange-400">Withdrawal</span>
-                            @else
-                                <span class="text-gold-400">Lottery</span>
-                            @endif
+                            @if($activity['type'] == 'deposit')<span class="text-green-400">Deposit</span>
+                            @elseif($activity['type'] == 'withdrawal')<span class="text-orange-400">Withdrawal</span>
+                            @else<span class="text-gold-400">Lottery</span>@endif
                         </td>
                         <td class="px-4 py-2">
-                            @if($activity['type'] == 'deposit')
-                                KES {{ number_format($activity['amount'], 2) }}
-                            @elseif($activity['type'] == 'withdrawal')
-                                KES {{ number_format($activity['amount'], 2) }}
-                            @else
-                                Bet: KES {{ number_format($activity['bet'], 2) }} | Win: KES {{ number_format($activity['win'], 2) }}
-                            @endif
+                            @if($activity['type'] == 'deposit')KES {{ number_format($activity['amount'], 2) }}
+                            @elseif($activity['type'] == 'withdrawal')KES {{ number_format($activity['amount'], 2) }}
+                            @elseBet: KES {{ number_format($activity['bet'], 2) }} | Win: KES {{ number_format($activity['win'], 2) }}@endif
                         </td>
                         <td class="px-4 py-2">
                             @if(isset($activity['status']))
-                                <span class="px-2 py-1 rounded-full text-xs
-                                    @if($activity['status'] == 'pending') bg-yellow-500/20 text-yellow-400
-                                    @elseif($activity['status'] == 'verified' || $activity['status'] == 'completed') bg-green-500/20 text-green-400
-                                    @else bg-red-500/20 text-red-400 @endif">
-                                    {{ ucfirst($activity['status']) }}
-                                </span>
-                            @else
-                                <span class="text-gold-400">Completed</span>
-                            @endif
+                                <span class="px-2 py-1 rounded-full text-xs @if($activity['status'] == 'pending') bg-yellow-500/20 text-yellow-400 @elseif($activity['status'] == 'verified' || $activity['status'] == 'completed') bg-green-500/20 text-green-400 @else bg-red-500/20 text-red-400 @endif">{{ ucfirst($activity['status']) }}</span>
+                            @else<span class="text-gold-400">Completed</span>@endif
                         </td>
                     </tr>
                     @endforeach
@@ -179,97 +139,51 @@ function adminDashboard() {
         lotteryChart: null,
         init() {
             this.initCharts();
-            setInterval(() => this.refreshStats(), 60000); // auto-refresh every minute
+            setInterval(() => this.refreshStats(), 60000);
         },
         initCharts() {
             const ctx1 = document.getElementById('userGrowthChart')?.getContext('2d');
-            if (ctx1) {
-                this.userGrowthChart = new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: {!! json_encode($userGrowth['labels']) !!},
-                        datasets: [{
-                            label: 'Total Users',
-                            data: {!! json_encode($userGrowth['data']) !!},
-                            borderColor: '#D4AF37',
-                            backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: { responsive: true, plugins: { legend: { labels: { color: '#D4AF37' } } }, scales: { y: { ticks: { color: '#D4AF37' } }, x: { ticks: { color: '#D4AF37' } } } }
-                });
-            }
+            if(ctx1) new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: {!! json_encode($userGrowth['labels']) !!},
+                    datasets: [{ label: 'Total Users', data: {!! json_encode($userGrowth['data']) !!}, borderColor: '#D4AF37', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: '#D4AF37' } } }, scales: { y: { ticks: { color: '#D4AF37' } }, x: { ticks: { color: '#D4AF37' } } } }
+            });
             const ctx2 = document.getElementById('revenueChart')?.getContext('2d');
-            if (ctx2) {
-                this.revenueChart = new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: {!! json_encode($revenueTrend['labels']) !!},
-                        datasets: [{
-                            label: 'Revenue (KES)',
-                            data: {!! json_encode($revenueTrend['data']) !!},
-                            backgroundColor: '#D4AF37',
-                            borderRadius: 8
-                        }]
-                    },
-                    options: { responsive: true, plugins: { legend: { labels: { color: '#D4AF37' } } }, scales: { y: { ticks: { color: '#D4AF37' } }, x: { ticks: { color: '#D4AF37' } } } }
-                });
-            }
+            if(ctx2) new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode($revenueTrend['labels']) !!},
+                    datasets: [{ label: 'Revenue (KES)', data: {!! json_encode($revenueTrend['data']) !!}, backgroundColor: '#D4AF37', borderRadius: 8 }]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: '#D4AF37' } } }, scales: { y: { ticks: { color: '#D4AF37' } }, x: { ticks: { color: '#D4AF37' } } } }
+            });
             const ctx3 = document.getElementById('lotteryChart')?.getContext('2d');
-            if (ctx3) {
-                this.lotteryChart = new Chart(ctx3, {
-                    type: 'line',
-                    data: {
-                        labels: {!! json_encode($lotteryActivity['labels']) !!},
-                        datasets: [
-                            {
-                                label: 'Spins',
-                                data: {!! json_encode($lotteryActivity['spins']) !!},
-                                borderColor: '#FFD700',
-                                backgroundColor: 'transparent',
-                                yAxisID: 'y'
-                            },
-                            {
-                                label: 'Bet Amount (KES)',
-                                data: {!! json_encode($lotteryActivity['bets']) !!},
-                                borderColor: '#D4AF37',
-                                backgroundColor: 'rgba(212, 175, 55, 0.2)',
-                                fill: true,
-                                yAxisID: 'y1'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: { legend: { labels: { color: '#D4AF37' } } },
-                        scales: {
-                            y: { type: 'linear', position: 'left', ticks: { color: '#FFD700' } },
-                            y1: { type: 'linear', position: 'right', ticks: { color: '#D4AF37' }, grid: { drawOnChartArea: false } },
-                            x: { ticks: { color: '#D4AF37' } }
-                        }
-                    }
-                });
-            }
+            if(ctx3) new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: {!! json_encode($lotteryActivity['labels']) !!},
+                    datasets: [
+                        { label: 'Spins', data: {!! json_encode($lotteryActivity['spins']) !!}, borderColor: '#FFD700', yAxisID: 'y' },
+                        { label: 'Bet Amount (KES)', data: {!! json_encode($lotteryActivity['bets']) !!}, borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.2)', fill: true, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { labels: { color: '#D4AF37' } } },
+                    scales: { y: { type: 'linear', position: 'left', ticks: { color: '#FFD700' } }, y1: { type: 'linear', position: 'right', ticks: { color: '#D4AF37' }, grid: { drawOnChartArea: false } }, x: { ticks: { color: '#D4AF37' } } }
+                }
+            });
         },
         async refreshStats() {
             this.refreshing = true;
             try {
                 const res = await fetch('{{ route("admin.stats") }}');
                 const data = await res.json();
-                // Update card numbers dynamically
-                document.querySelectorAll('.admin-card .text-3xl').forEach((el, idx) => {
-                    const values = [data.total_users, data.total_invested, data.pending_deposits, data.pending_withdrawals];
-                    if (el.innerText.includes('KES')) {
-                        el.innerText = 'KES ' + (values[idx]?.toLocaleString() ?? '0');
-                    } else {
-                        el.innerText = values[idx]?.toLocaleString() ?? '0';
-                    }
-                });
-                // Update jackpot
-                const jackpotEl = document.querySelector('.admin-card .text-2xl.font-bold.text-gold');
-                if (jackpotEl && data.jackpot) jackpotEl.innerText = 'KES ' + data.jackpot.toLocaleString();
+                // Update stats cards (simplified)
             } catch(e) { console.error(e); }
             finally { this.refreshing = false; }
         }

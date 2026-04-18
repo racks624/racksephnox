@@ -17,8 +17,8 @@
                             <th class="px-4 py-2 text-left">Win</th>
                             <th class="px-4 py-2 text-left">Result</th>
                             <th class="px-4 py-2 text-left">Jackpot</th>
-                        </tr>
-                    </thead>
+                            <th class="px-4 py-2 text-left">Verified</th>
+                        </thead>
                     <tbody>
                         @forelse($history as $spin)
                         <tr>
@@ -28,31 +28,19 @@
                             <td class="px-4 py-2">
                                 <div class="flex gap-1 text-xl">
                                     @foreach($spin->result['names'] ?? [] as $name)
-                                        @if($name == 'divine_sword') ⚔️
-                                        @elseif($name == 'divine_bell') 🔔
-                                        @elseif($name == 'golden_flower') 🌸
-                                        @elseif($name == 'frequency_8888') 8888
-                                        @elseif($name == 'frequency_7777') 7777
-                                        @elseif($name == 'taurus') ♉
-                                        @elseif($name == 'tree_of_life') 🌳
-                                        @elseif($name == 'divine_star') ⭐
-                                        @else ❓
-                                        @endif
+                                        @if($name == 'divine_sword')⚔️@elseif($name == 'divine_bell')🔔@elseif($name == 'golden_flower')🌸@elseif($name == 'frequency_8888')8888@elseif($name == 'frequency_7777')7777@elseif($name == 'taurus')♉@elseif($name == 'tree_of_life')🌳@elseif($name == 'divine_star')⭐@else?@endif
                                     @endforeach
                                 </div>
                             </td>
                             <td class="px-4 py-2">
-                                @if($spin->result['super_jackpot'] ?? false)
-                                    <span class="text-gold-400">🌟 Super</span>
-                                @elseif($spin->result['mini_jackpot'] ?? false)
-                                    <span class="text-pink-400">🌸 Mini</span>
-                                @else
-                                    —
-                                @endif
+                                @if($spin->result['super_jackpot'] ?? false)<span class="text-gold-400">🌟 Super</span>@elseif($spin->result['mini_jackpot'] ?? false)<span class="text-pink-400">🌸 Mini</span>@else—@endif
+                            </td>
+                            <td class="px-4 py-2">
+                                @if($spin->verified)<span class="text-green-400">✅ Verified</span>@else<button onclick="verifySpin({{ $spin->id }})" class="text-gold-400 hover:text-gold text-sm">Verify</button>@endif
                             </td>
                         </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center py-8 text-ivory/50">No spins yet. Start your cosmic journey!</td></tr>
+                            <tr><td colspan="6" class="text-center py-8 text-ivory/50">No spins yet. Start your cosmic journey!</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -61,4 +49,20 @@
         </div>
     </div>
 </div>
+<script>
+async function verifySpin(spinId) {
+    const seed = prompt("Enter the server seed for this spin:");
+    if (!seed) return;
+    try {
+        const res = await fetch('/api/lottery/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: JSON.stringify({ spin_id: spinId, server_seed: seed })
+        });
+        const data = await res.json();
+        if (data.verified) { alert('✅ Spin verified!'); location.reload(); }
+        else alert('❌ Verification failed: ' + (data.message || 'Invalid seed.'));
+    } catch(e) { alert('Error verifying spin.'); }
+}
+</script>
 @endsection

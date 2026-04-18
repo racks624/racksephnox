@@ -12,24 +12,25 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'phone', 'password',
-        'referral_code', 'referred_by', 'kyc_status', 'is_active',
-        'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
-        'is_admin', 'kyc_level', 'is_verified', 'onboarding_completed',
-        'avatar', 'notification_preferences'
+        'name', 'email', 'password', 'phone', 'referral_code', 'referred_by',
+        'is_admin', 'is_verified', 'kyc_status', 'kyc_level', 'onboarding_completed',
+        'is_vip', 'has_promo', 'promo_expires_at', 'free_spins_available',
+        'last_activity_at', 'preferred_currency',
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes',
+        'password', 'remember_token',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'two_factor_confirmed_at' => 'datetime',
         'is_admin' => 'boolean',
         'is_verified' => 'boolean',
         'onboarding_completed' => 'boolean',
-        'notification_preferences' => 'array',
+        'is_vip' => 'boolean',
+        'has_promo' => 'boolean',
+        'promo_expires_at' => 'datetime',
+        'free_spins_available' => 'integer',
     ];
 
     public function wallet()
@@ -37,34 +38,14 @@ class User extends Authenticatable
         return $this->hasOne(Wallet::class);
     }
 
+    public function tradingAccount()
+    {
+        return $this->hasOne(TradingAccount::class);
+    }
+
     public function investments()
     {
         return $this->hasMany(Investment::class);
-    }
-
-    public function transactions()
-    {
-        return $this->hasMany(Transaction::class);
-    }
-
-    public function mpesaTransactions()
-    {
-        return $this->hasMany(MpesaTransaction::class);
-    }
-
-    public function kycDocuments()
-    {
-        return $this->hasMany(KycDocument::class);
-    }
-
-    public function auditLogs()
-    {
-        return $this->hasMany(AuditLog::class);
-    }
-
-    public function referrals()
-    {
-        return $this->hasMany(User::class, 'referred_by');
     }
 
     public function machineInvestments()
@@ -72,45 +53,38 @@ class User extends Authenticatable
         return $this->hasMany(MachineInvestment::class);
     }
 
-    public function tradingAccount()
+    public function transactions()
     {
-        return $this->hasOne(TradingAccount::class);
+        return $this->hasMany(Transaction::class);
     }
 
-    public function tradeOrders()
+    public function referrals()
     {
-        return $this->hasMany(TradeOrder::class);
+        return $this->hasMany(User::class, 'referred_by');
     }
 
-    public function depositRequests()
+    public function referredBy()
     {
-        return $this->hasMany(DepositRequest::class);
+        return $this->belongsTo(User::class, 'referred_by');
     }
 
-    public function withdrawalRequests()
+    public function lotterySpins()
     {
-        return $this->hasMany(WithdrawalRequest::class);
+        return $this->hasMany(LotterySpin::class);
     }
 
-    public function bankAccounts()
+    public function lotteryTournamentEntries()
     {
-        return $this->hasMany(UserBankAccount::class);
+        return $this->hasMany(LotteryTournamentEntry::class);
     }
 
-    protected static function booted()
+    public function lotteryUserMissions()
     {
-        static::created(function ($user) {
-            if (!$user->wallet) {
-                $wallet = $user->wallet()->create([
-                    'user_id' => $user->id,
-                    'balance' => 0,
-                ]);
+        return $this->hasMany(LotteryUserMission::class);
+    }
 
-                $user->referral_code = strtoupper(substr(md5($user->id . $user->email), 0, 8));
-                $user->save();
-
-                $wallet->credit(60, 'Welcome bonus');
-            }
-        });
+    public function lotteryBonusWheelSpins()
+    {
+        return $this->hasMany(LotteryBonusWheelSpin::class);
     }
 }

@@ -17,7 +17,11 @@
         <h2 class="text-xl font-bold text-gold mb-4">🎲 Active Games</h2>
         @foreach($games as $game)
         <div class="border-b border-gold/20 py-4 flex flex-wrap justify-between items-center">
-            <div><p class="font-bold text-ivory">{{ $game->name }}</p><p class="text-sm text-ivory/60">Min: KES {{ number_format($game->min_bet, 2) }} | Max: KES {{ number_format($game->max_bet, 2) }} | Super Jackpot: KES {{ number_format($game->progressive_jackpot, 2) }}</p></div>
+            <div>
+                <p class="font-bold text-ivory">{{ $game->name }}</p>
+                <p class="text-sm text-ivory/60">Min: KES {{ number_format($game->min_bet, 2) }} | Max: KES {{ number_format($game->max_bet, 2) }} | Super Jackpot: KES {{ number_format($game->progressive_jackpot, 2) }}</p>
+                <p class="text-xs text-gold-400">Base RTP: {{ $game->base_rtp }}% | VIP RTP: {{ $game->vip_rtp }}% | Promo RTP: {{ $game->promo_rtp }}%</p>
+            </div>
             <a href="{{ route('admin.lottery.edit-game', $game) }}" class="btn-golden text-sm py-1 px-3">Edit Game</a>
         </div>
         @endforeach
@@ -51,7 +55,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="border-b border-gold/30">
-                    <tr class="text-gold-400"><th class="px-4 py-2">User</th><th class="px-4 py-2">Bet</th><th class="px-4 py-2">Win</th><th class="px-4 py-2">Mini</th><th class="px-4 py-2">Super</th><th class="px-4 py-2">Time</th></tr>
+                    <tr class="text-gold-400"><th class="px-4 py-2">User</th><th class="px-4 py-2">Bet</th><th class="px-4 py-2">Win</th><th class="px-4 py-2">Mini</th><th class="px-4 py-2">Super</th><th class="px-4 py-2">Verified</th><th class="px-4 py-2">Time</th></tr>
                 </thead>
                 <tbody>
                     @forelse($recentSpins as $spin)
@@ -61,10 +65,11 @@
                         <td class="px-4 py-2 text-green-400">KES {{ number_format($spin->win_amount, 2) }}</td>
                         <td class="px-4 py-2">@if($spin->mini_jackpot_hit) 🌸 @else — @endif</td>
                         <td class="px-4 py-2">@if($spin->super_jackpot_hit) 🌟 @else — @endif</td>
+                        <td class="px-4 py-2">@if($spin->verified) ✅ @else ❌ @endif</td>
                         <td class="px-4 py-2 text-ivory/60">{{ $spin->created_at->diffForHumans() }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center py-4 text-ivory/50">No spins yet.</td></tr>
+                    <tr><td colspan="7" class="text-center py-4 text-ivory/50">No spins yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

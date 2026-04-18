@@ -2,75 +2,54 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+
 class CurrencyService
 {
-    /**
-     * Supported currencies with their symbols and exchange rates (relative to KES)
-     */
-    protected $currencies = [
-        'KES' => ['symbol' => 'KES', 'name' => 'Kenyan Shilling', 'rate' => 1, 'decimals' => 2],
-        'USD' => ['symbol' => '$', 'name' => 'US Dollar', 'rate' => 0.0077, 'decimals' => 2],
-        'EUR' => ['symbol' => '€', 'name' => 'Euro', 'rate' => 0.0071, 'decimals' => 2],
-        'GBP' => ['symbol' => '£', 'name' => 'British Pound', 'rate' => 0.0061, 'decimals' => 2],
-        'UGX' => ['symbol' => 'USh', 'name' => 'Ugandan Shilling', 'rate' => 28.5, 'decimals' => 0],
-        'TZS' => ['symbol' => 'TSh', 'name' => 'Tanzanian Shilling', 'rate' => 19.2, 'decimals' => 0],
-        'RWF' => ['symbol' => 'FRw', 'name' => 'Rwandan Franc', 'rate' => 9.8, 'decimals' => 0],
-        'ZAR' => ['symbol' => 'R', 'name' => 'South African Rand', 'rate' => 0.14, 'decimals' => 2],
-        'NGN' => ['symbol' => '₦', 'name' => 'Nigerian Naira', 'rate' => 11.5, 'decimals' => 2],
-        'GHS' => ['symbol' => '₵', 'name' => 'Ghanaian Cedi', 'rate' => 0.11, 'decimals' => 2],
-    ];
+    protected $apiKey;
+    protected $baseUrl = 'https://api.exchangerate-api.com/v4/latest/';
 
-    /**
-     * Convert an amount from KES to target currency.
-     */
-    public function convert($amount, $toCurrency = 'KES'): float
+    public function __construct()
     {
-        $toRate = $this->currencies[$toCurrency]['rate'] ?? 1;
-        return round($amount * $toRate, $this->currencies[$toCurrency]['decimals'] ?? 2);
+        $this->apiKey = env('EXCHANGE_RATE_API_KEY', '');
     }
 
-    /**
-     * Convert from any currency to KES.
-     */
-    public function convertToKes($amount, $fromCurrency = 'KES'): float
+    public function getRate(string $from, string $to): float
     {
-        $fromRate = $this->currencies[$fromCurrency]['rate'] ?? 1;
-        if ($fromRate == 0) return 0;
-        return round($amount / $fromRate, 2);
+        if ($from === $to) return 1.0;
+        $cacheKey = "exchange_rate_{$from}_{$to}";
+        return Cache::remember($cacheKey, 3600, function () use ($from, $to) {
+            try {
+                $response = Http::get($this->baseUrl . $from);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return $data['rates'][$to] ?? 1.0;
+                }
+            } catch (\Exception $e) {
+                // fallback to hardcoded rates (KES to USD approx)
+                if ($from === 'KES' && $to === 'USD') return 0.0075;
+                if ($from === 'USD' && $to === 'KES') return 133.33;
+            }
+            return 1.0;
+        });
     }
 
-    /**
-     * Get formatted amount with currency symbol.
-     */
-    public function format($amount, $currency = 'KES'): string
+    public function convert(float $amount, string $from, string $to): float
     {
-        $symbol = $this->currencies[$currency]['symbol'] ?? $currency;
-        $decimals = $this->currencies[$currency]['decimals'] ?? 2;
-        $formatted = number_format($amount, $decimals);
-        return "{$symbol} {$formatted}";
+        $rate = $this->getRate($from, $to);
+        return round($amount * $rate, 2);
     }
 
-    /**
-     * Get the symbol for a currency.
-     */
-    public function getSymbol($currency): string
+    public function getUserBalanceInCurrency($user, string $currency): float
     {
-        return $this->currencies[$currency]['symbol'] ?? $currency;
-    }
-
-    /**
-     * Get all available currencies.
-     */
-    public function getAvailableCurrencies(): array
-    {
-        return array_keys($this->currencies);
-    }
-
-    /**
-     * Get exchange rate for a currency (relative to KES).
-     */
-    public function getRate($currency): float
-    {
-        return $this->currencies[$currency]['rate'] ?? 1;
+        $wallet = $user->wallet;
+        if ($currency === 'KES') return $wallet->balance;
+        $field = "balance_" . strtolower($currency);
+        if (in_array($currency, ['USD', 'EUR', 'BTC', 'ETH', 'USDT']) && isset($wallet->$field)) {
+            return $wallet->$field;
+        }
+        // convert from KES
+        return $this->convert($wallet->balance, 'KES', $currency);
     }
 }

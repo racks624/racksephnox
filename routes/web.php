@@ -18,6 +18,10 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SocialTradingController;
 use App\Http\Controllers\LotteryController;
+use App\Http\Controllers\LotteryTournamentController;
+use App\Http\Controllers\LotteryMissionController;
+use App\Http\Controllers\LotteryBonusWheelController;
+use App\Http\Controllers\LotterySocialController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -194,12 +198,25 @@ Route::middleware(['auth'])->prefix('profile')->name('profile.')->group(function
 });
 
 // ==============================================
-// LOTTERY WEB ROUTES (User‑facing)
+// LOTTERY WEB ROUTES (Single, clean group – NO DUPLICATES)
 // ==============================================
 Route::middleware(['auth', 'verified'])->prefix('lottery')->name('lottery.')->group(function () {
+    // Core game routes
     Route::get('/', [LotteryController::class, 'index'])->name('index');
     Route::post('/spin', [LotteryController::class, 'spin'])->name('spin');
     Route::post('/free-spin', [LotteryController::class, 'freeSpin'])->name('free-spin');
     Route::get('/history', [LotteryController::class, 'history'])->name('history');
     Route::get('/leaderboard/{period?}', [LotteryController::class, 'leaderboard'])->name('leaderboard');
+
+    // Feature routes
+    Route::get('/tournaments', [LotteryTournamentController::class, 'index'])->name('tournaments');
+    Route::get('/missions', [LotteryMissionController::class, 'index'])->name('missions');
+    Route::get('/bonus-wheel', [LotteryBonusWheelController::class, 'index'])->name('bonus-wheel');
+    Route::post('/bonus-wheel/spin', [LotteryBonusWheelController::class, 'spin'])->name('bonus-wheel.spin');
+    Route::get('/social', [LotterySocialController::class, 'feed'])->name('social');
 });
+// Alias for backward compatibility
+Route::middleware(['auth', 'verified'])->get('/lottery/bonus-wheel', [LotteryBonusWheelController::class, 'index'])->name('bonus-wheel.index');
+
+// Bonus Wheel Spin Route (POST)
+Route::middleware(['auth', 'verified'])->post('/lottery/bonus-wheel/spin', [App\Http\Controllers\LotteryBonusWheelController::class, 'spin'])->name('bonus-wheel.spin');

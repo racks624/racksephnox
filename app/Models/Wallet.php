@@ -2,20 +2,32 @@
 
 namespace App\Models;
 
-use App\Events\WalletBalanceUpdated;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Wallet extends Model
 {
-    use HasFactory;
-
-    protected $fillable = ['user_id', 'balance', 'locked_balance'];
+    protected $fillable = [
+        'user_id', 'balance', 'currency', 'balance_usd', 'balance_eur',
+        'balance_btc', 'balance_eth', 'balance_usdt'
+    ];
 
     protected $casts = [
         'balance' => 'decimal:2',
-        'locked_balance' => 'decimal:2',
+        'balance_usd' => 'decimal:8',
+        'balance_eur' => 'decimal:8',
+        'balance_btc' => 'decimal:8',
+        'balance_eth' => 'decimal:8',
+        'balance_usdt' => 'decimal:8',
+    ];
+
+    protected $attributes = [
+        'currency' => 'KES',
+        'balance' => 0,
+        'balance_usd' => 0,
+        'balance_eur' => 0,
+        'balance_btc' => 0,
+        'balance_eth' => 0,
+        'balance_usdt' => 0,
     ];
 
     public function user()
@@ -23,55 +35,25 @@ class Wallet extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function transactions()
+    public function getBalanceInCurrency($currency)
     {
-        return $this->hasMany(Transaction::class);
-    }
-
-    public function credit($amount, $description, $type = 'credit')
-    {
-        return DB::transaction(function () use ($amount, $description, $type) {
-            $this->increment('balance', $amount);
-
-            return $this->transactions()->create([
-                'user_id'       => $this->user_id,
-                'wallet_id'     => $this->id,
-                'type'          => $type,
-                'amount'        => $amount,
-                'balance_after' => $this->balance,
-                'description'   => $description,
-                'status'        => 'completed',
-            ]);
-        });
-    }
-
-    public function debit($amount, $description, $type = 'debit')
-    {
-        if ($this->balance < $amount) {
-            throw new \Exception('Insufficient balance');
+        if ($currency === 'KES') return $this->balance;
+        $field = 'balance_' . strtolower($currency);
+        if (in_array($currency, ['USD', 'EUR', 'BTC', 'ETH', 'USDT']) && isset($this->$field)) {
+            return $this->$field;
         }
-
-        return DB::transaction(function () use ($amount, $description, $type) {
-            $this->decrement('balance', $amount);
-
-            return $this->transactions()->create([
-                'user_id'       => $this->user_id,
-                'wallet_id'     => $this->id,
-                'type'          => $type,
-                'amount'        => -$amount,
-                'balance_after' => $this->balance,
-                'description'   => $description,
-                'status'        => 'completed',
-            ]);
-        });
+        $rates = ['USD' => 0.0075, 'EUR' => 0.0069, 'BTC' => 0.00000011, 'ETH' => 0.0000018, 'USDT' => 0.0075];
+        return $this->balance * ($rates[$currency] ?? 1);
     }
 
-    protected static function booted()
+    public function setBalanceAttribute($value)
     {
-        static::updated(function ($wallet) {
-            if ($wallet->isDirty('balance') || $wallet->isDirty('locked_balance')) {
-                broadcast(new WalletBalanceUpdated($wallet));
-            }
-        });
+        $this->attributes['balance'] = $value;
+        $rates = ['USD' => 0.0075, 'EUR' => 0.0069, 'BTC' => 0.00000011, 'ETH' => 0.0000018, 'USDT' => 0.0075];
+        $this->attributes['balance_usd'] = $value * $rates['USD'];
+        $this->attributes['balance_eur'] = $value * $rates['EUR'];
+        $this->attributes['balance_btc'] = $value * $rates['BTC'];
+        $this->attributes['balance_eth'] = $value * $rates['ETH'];
+        $this->attributes['balance_usdt'] = $value * $rates['USDT'];
     }
 }
