@@ -1,46 +1,33 @@
+# fly.toml for Racksephnox Laravel Application
+
 app = "racksephnox"
-primary_region = "iad"
+primary_region = "jnb"
 
 [build]
-  dockerfile = "Dockerfile"
+  [build.args]
+    NODE_VERSION = "18"
 
 [env]
   APP_ENV = "production"
   APP_DEBUG = "false"
   LOG_CHANNEL = "stack"
-  SESSION_DRIVER = "redis"
-  CACHE_DRIVER = "redis"
-  QUEUE_CONNECTION = "redis"
-  REDIS_URL = "redis://${REDIS_HOST}:6379"
-  DB_CONNECTION = "pgsql"
-  DB_HOST = "${POSTGRES_HOST}"
-  DB_PORT = "5432"
-  DB_DATABASE = "${POSTGRES_DB}"
-  DB_USERNAME = "${POSTGRES_USER}"
-  DB_PASSWORD = "${POSTGRES_PASSWORD}"
-  APP_URL = "https://${FLY_APP_NAME}.fly.dev"
 
-[experimental]
-  auto_rollback = true
-
-[[services]]
+[http_service]
   internal_port = 8080
-  protocol = "tcp"
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
 
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 2
+  memory_mb = 512
 
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
+[deploy]
+  release_command = "php artisan migrate --force"
 
-  [[services.ports]]
-    port = 443
-    handlers = ["tls"]
-
-  [[services.tcp_checks]]
-    interval = 15000
-    timeout = 2000
-    grace_period = 30s
+[ mounts ]
+  source = "storage"
+  destination = "/app/storage"
