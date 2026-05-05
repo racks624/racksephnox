@@ -9,7 +9,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/lottery/canvas-slot.js',
                 'resources/js/lottery/sounds.js',
-                'resources/js/lottery/symbols.js',
+                'resources/js/lottery/svg-symbols.js',
             ],
             refresh: true,
         }),
@@ -20,13 +20,7 @@ export default defineConfig({
             '@lottery': '/resources/js/lottery',
         },
     },
-    build: {
-        rollupOptions: {
-            output: {
-                manualChunks: {
-                    lottery: ['resources/js/lottery/canvas-slot.js', 'resources/js/lottery/sounds.js', 'resources/js/lottery/symbols.js'],
-                },
-            },
-        },
+    optimizeDeps: {
+        include: ['alpinejs', 'chart.js'],
     },
 });

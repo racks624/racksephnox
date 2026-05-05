@@ -48,7 +48,9 @@
         "laravel",
         "vite",
         "tailwindcss",
-        "alpinejs"
+        "alpinejs",
+        "lottery",
+        "slot-machine"
     ],
     "author": {
         "name": "Racksephnox",
@@ -58,10 +60,10 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/TerminusGenius963/racksephnox.git"
+        "url": "https://github.com/racks624/racksephnox.git"
     },
     "homepage": "https://racksephnox.com",
     "bugs": {
-        "url": "https://github.com/TerminusGenius963/racksephnox/issues"
+        "url": "https://github.com/racks624/racksephnox/issues"
     }
 }
