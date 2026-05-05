@@ -1,11 +1,8 @@
-# fly.toml for Racksephnox Laravel Application
-
 app = "racksephnox"
-primary_region = "jnb"
+primary_region = "iad"
 
 [build]
-  [build.args]
-    NODE_VERSION = "18"
+  builder = "heroku/buildpacks:20"
 
 [env]
   APP_ENV = "production"
@@ -17,17 +14,9 @@ primary_region = "jnb"
   force_https = true
   auto_stop_machines = false
   auto_start_machines = true
-  min_machines_running = 1
-  processes = ["app"]
+  min_machines_running = 0
 
 [[vm]]
+  memory = "1gb"
   cpu_kind = "shared"
-  cpus = 2
-  memory_mb = 512
-
-[deploy]
-  release_command = "php artisan migrate --force"
-
-[ mounts ]
-  source = "storage"
-  destination = "/app/storage"
+  cpus = 1
