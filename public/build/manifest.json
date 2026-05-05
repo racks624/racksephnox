@@ -5,33 +5,30 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D4c8ouSp.js",
+    "file": "assets/app-DxGExKuf.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "resources/js/lottery/canvas-slot.js"
+      "resources/js/lottery/sounds.js"
     ]
   },
   "resources/js/lottery/canvas-slot.js": {
-    "file": "assets/canvas-slot-CEAuHILr.js",
+    "file": "assets/canvas-slot-l0sNRNKZ.js",
     "name": "canvas-slot",
     "src": "resources/js/lottery/canvas-slot.js",
     "isEntry": true
   },
   "resources/js/lottery/sounds.js": {
-    "file": "assets/sounds-Xvm3SpcA.js",
+    "file": "assets/sounds-CEAuHILr.js",
     "name": "sounds",
     "src": "resources/js/lottery/sounds.js",
-    "isEntry": true,
-    "imports": [
-      "resources/js/lottery/canvas-slot.js"
-    ]
+    "isEntry": true
   },
-  "resources/js/lottery/symbols.js": {
-    "file": "assets/symbols-l0sNRNKZ.js",
-    "name": "symbols",
-    "src": "resources/js/lottery/symbols.js",
+  "resources/js/lottery/svg-symbols.js": {
+    "file": "assets/svg-symbols-l0sNRNKZ.js",
+    "name": "svg-symbols",
+    "src": "resources/js/lottery/svg-symbols.js",
     "isEntry": true
   }
 }
