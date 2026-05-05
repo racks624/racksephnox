@@ -24,8 +24,8 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\Localization::class,
         ],
-
         'api' => [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
@@ -46,5 +46,10 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'admin' => \App\Http\Middleware\Admin::class,
+        'onboarding' => \App\Http\Middleware\Onboarding::class,
+        'two-factor' => \App\Http\Middleware\TwoFactor::class,
+        'api.throttle' => \App\Http\Middleware\ApiThrottle::class,
+        'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
+        'localization' => \App\Http\Middleware\Localization::class,
     ];
 }

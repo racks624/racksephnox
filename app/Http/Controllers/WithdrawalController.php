@@ -1,61 +1,24 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\WithdrawalRequest;
-use App\Services\WithdrawalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WithdrawalController extends Controller
 {
-    public function showForm()
+    public function form()
     {
-        $user = Auth::user();
-        $minWithdrawal = env('MIN_WITHDRAWAL', 530);
-        $maxWithdrawal = 1000000;
-        return view('withdrawal.form', compact('user', 'minWithdrawal', 'maxWithdrawal'));
+        $accounts = Auth::user()->bankAccounts;
+        return view('withdrawal.form', compact('accounts'));
     }
 
-    public function submitRequest(Request $request)
+    public function submit(Request $request)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:530|max:1000000',
-            'phone' => 'required|string|regex:/^254[0-9]{9}$/',
-        ]);
-
-        $amount = $request->amount;
-        $validation = WithdrawalService::validateWithdrawal($amount);
-        if (!$validation['valid']) {
-            return back()->withErrors(['error' => $validation['message']]);
-        }
-
-        $fee = WithdrawalService::calculateFee($amount);
-        $netAmount = WithdrawalService::getNetAmount($amount);
+        $request->validate(['amount' => 'required|numeric|min:530|max:1000000', 'bank_account_id' => 'required|exists:user_bank_accounts,id']);
         $user = Auth::user();
-
-        if ($user->wallet->balance < $amount) {
-            return back()->withErrors(['error' => 'Insufficient wallet balance.']);
-        }
-
-        // Debit wallet immediately (pending verification)
-        $user->wallet->debit($amount, 'Withdrawal request: ' . $amount . ' (fee: ' . $fee . ')');
-
-        $withdrawal = WithdrawalRequest::create([
-            'user_id' => $user->id,
-            'amount' => $amount,
-            'fee' => $fee,
-            'net_amount' => $netAmount,
-            'phone' => $request->phone,
-            'status' => 'pending',
-        ]);
-
-        return redirect()->route('withdrawal.history')->with('success', 'Withdrawal request submitted. Awaiting processing.');
-    }
-
-    public function history()
-    {
-        $withdrawals = Auth::user()->withdrawalRequests()->latest()->paginate(10);
-        return view('withdrawal.history', compact('withdrawals'));
+        if ($user->wallet->balance < $request->amount) return back()->withErrors(['Insufficient balance']);
+        WithdrawalRequest::create(['user_id' => $user->id, 'amount' => $request->amount, 'bank_account_id' => $request->bank_account_id, 'status' => 'pending']);
+        return back()->with('success', 'Withdrawal request submitted.');
     }
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\UserBankAccount;
@@ -10,67 +9,30 @@ class BankAccountController extends Controller
 {
     public function index()
     {
-        $accounts = Auth::user()->bankAccounts()->get();
-        return view('bank_accounts.index', compact('accounts'));
+        $accounts = Auth::user()->bankAccounts;
+        return view('bank-accounts.index', compact('accounts'));
     }
 
     public function create()
     {
-        return view('bank_accounts.create');
+        return view('bank-accounts.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255',
-            'branch' => 'nullable|string|max:255',
-            'is_default' => 'boolean',
+            'bank_name' => 'required|string|max:100',
+            'account_name' => 'required|string|max:100',
+            'account_number' => 'required|string|max:50',
         ]);
-
-        $user = Auth::user();
-        
-        if ($request->is_default) {
-            $user->bankAccounts()->update(['is_default' => false]);
-        }
-        
-        $user->bankAccounts()->create($request->all());
-        
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account added successfully.');
+        Auth::user()->bankAccounts()->create($request->only('bank_name', 'account_name', 'account_number'));
+        return redirect()->route('bank-accounts.index')->with('success', 'Bank account added.');
     }
 
-    public function edit(UserBankAccount $bankAccount)
+    public function destroy($id)
     {
-        $this->authorize('update', $bankAccount);
-        return view('bank_accounts.edit', compact('bankAccount'));
-    }
-
-    public function update(Request $request, UserBankAccount $bankAccount)
-    {
-        $this->authorize('update', $bankAccount);
-        
-        $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|max:255',
-            'branch' => 'nullable|string|max:255',
-            'is_default' => 'boolean',
-        ]);
-        
-        if ($request->is_default) {
-            Auth::user()->bankAccounts()->where('id', '!=', $bankAccount->id)->update(['is_default' => false]);
-        }
-        
-        $bankAccount->update($request->all());
-        
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account updated.');
-    }
-
-    public function destroy(UserBankAccount $bankAccount)
-    {
-        $this->authorize('delete', $bankAccount);
-        $bankAccount->delete();
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account deleted.');
+        $account = Auth::user()->bankAccounts()->findOrFail($id);
+        $account->delete();
+        return back()->with('success', 'Bank account removed.');
     }
 }

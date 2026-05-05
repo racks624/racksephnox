@@ -13,7 +13,7 @@
         <table class="w-full text-sm">
             <thead class="border-b border-gold/30">
                 <tr class="text-gold-400">
-                    <th class="px-4 py-2">ID</th><th>Name</th><th>Email</th><th>Admin</th><th>Verified</th><th>KYC</th><th>Joined</th><th>Actions</th>
+                    <th class="px-4 py-2">ID</th><th>Name</th><th>Email</th><th>Admin</th><th>VIP</th><th>Verified</th><th>KYC</th><th>Joined</th><th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -23,6 +23,7 @@
                     <td class="px-4 py-2">{{ $user->name }}</td>
                     <td class="px-4 py-2">{{ $user->email }}</td>
                     <td class="px-4 py-2">@if($user->is_admin) ✅ @else ❌ @endif</td>
+                    <td class="px-4 py-2">@if($user->is_vip) ✅ @else ❌ @endif</td>
                     <td class="px-4 py-2">@if($user->is_verified) ✅ @else ❌ @endif</td>
                     <td class="px-4 py-2">{{ ucfirst($user->kyc_status ?? 'pending') }}</td>
                     <td class="px-4 py-2">{{ $user->created_at->format('Y-m-d') }}</td>
@@ -33,8 +34,12 @@
                             @csrf @method('DELETE')
                             <button type="submit" class="text-red-400">Del</button>
                         </form>
+                        <form method="POST" action="{{ route('admin.users.toggle-vip', $user) }}">
+                            @csrf
+                            <button type="submit" class="text-yellow-400">Toggle VIP</button>
+                        </form>
                     </td>
-                </tr>
+                 </tr>
                 @endforeach
             </tbody>
         </table>

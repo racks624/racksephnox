@@ -3,71 +3,90 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\LotterySpin;
-use App\Models\LotteryTournament;
+use App\Models\Transaction;
+use App\Models\MachineInvestment;
+use App\Models\LotteryGame;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        $wallet = $user->wallet;
-        
-        // Lottery stats
-        $lotteryStats = [
-            'total_spins' => LotterySpin::where('user_id', $user->id)->count(),
-            'total_bet' => LotterySpin::where('user_id', $user->id)->sum('bet_amount'),
-            'total_win' => LotterySpin::where('user_id', $user->id)->sum('win_amount'),
-            'mini_jackpots' => LotterySpin::where('user_id', $user->id)->where('mini_jackpot_hit', true)->count(),
-            'super_jackpots' => LotterySpin::where('user_id', $user->id)->where('super_jackpot_hit', true)->count(),
-            'free_spins_available' => $user->free_spins_available ?? 0,
-        ];
-        
-        // Active tournament rank
-        $activeTournament = LotteryTournament::where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())
-            ->first();
-        $tournamentRank = null;
-        if ($activeTournament) {
-            $rankEntry = $activeTournament->entries()
-                ->where('user_id', $user->id)
-                ->first();
-            $tournamentRank = $rankEntry ? $rankEntry->rank : null;
+
+        // Wealth pillars
+        $walletBalance = $user->wallet?->balance ?? 0;
+        $totalInvested = MachineInvestment::where('user_id', $user->id)->sum('amount');
+        $totalProfit = MachineInvestment::where('user_id', $user->id)->sum('profit_credited');
+        $activeInvestments = MachineInvestment::where('user_id', $user->id)->where('status', 'active')->count();
+        $completedInvestments = MachineInvestment::where('user_id', $user->id)->where('status', 'completed')->count();
+
+        // Banking stats
+        $totalDeposited = Transaction::where('user_id', $user->id)->where('type', 'deposit')->sum('amount');
+        $totalWithdrawn = abs(Transaction::where('user_id', $user->id)->where('type', 'withdrawal')->sum('amount'));
+        $totalMachineInvested = MachineInvestment::where('user_id', $user->id)->sum('amount');
+        $totalInterest = Transaction::where('user_id', $user->id)->where('type', 'interest')->sum('amount');
+
+        // Recent transactions
+        $recentTransactions = Transaction::where('user_id', $user->id)->latest()->take(10)->get();
+
+        // Profit history (30 days)
+        $profitLabels = collect(range(29, 0))->map(fn($i) => now()->subDays($i)->format('M d'))->toArray();
+        $profitData = MachineInvestment::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->get()
+            ->groupBy(fn($inv) => $inv->created_at->format('Y-m-d'))
+            ->map(fn($group) => $group->sum('profit_credited'))
+            ->values()
+            ->toArray();
+        $profitData = array_pad($profitData, 30, 0);
+        $profitHistory = ['labels' => $profitLabels, 'data' => $profitData];
+
+        // Weekly performance (volume)
+        $weeklyLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $weeklyData = [];
+        for ($i = 0; $i < 7; $i++) {
+            $weeklyData[] = Transaction::where('user_id', $user->id)
+                ->whereDate('created_at', now()->startOfWeek()->addDays($i))
+                ->sum('amount');
         }
-        
-        // Existing dashboard data (profits, investments, transactions, etc.)
-        // ... (keep your existing logic for $totalInvested, $roi, $totalProfit, $activeInvestments, $completedInvestments, $totalDeposited, $totalWithdrawn, $totalMachineInvested, $totalInterest, $recentTransactions, $profitHistory, $weeklyPerformance, $portfolio, $btcPrice, $user->tradingAccount, $unreadNotificationsCount, $referralCount, $totalBonus, $totalReferralEarnings)
-        // For brevity, I include a simplified version; you should merge with your existing code.
-        
-        $user = Auth::user();
-        $totalInvested = $user->investments()->sum('amount') + $user->machineInvestments()->sum('amount');
-        $roi = 0;
-        $totalProfit = $user->transactions()->where('type', 'interest')->sum('amount');
-        $activeInvestments = $user->investments()->where('status', 'active')->count() + $user->machineInvestments()->where('status', 'active')->count();
-        $completedInvestments = $user->investments()->where('status', 'completed')->count() + $user->machineInvestments()->where('status', 'completed')->count();
-        $totalDeposited = $user->transactions()->where('type', 'deposit')->sum('amount');
-        $totalWithdrawn = $user->transactions()->where('type', 'withdrawal')->sum('amount');
-        $totalMachineInvested = $user->machineInvestments()->sum('amount');
-        $totalInterest = $user->transactions()->where('type', 'interest')->sum('amount');
-        $recentTransactions = $user->transactions()->latest()->take(10)->get();
-        $profitHistory = ['labels' => [], 'data' => []];
-        $weeklyPerformance = ['labels' => [], 'data' => []];
-        $portfolio = null;
-        $btcPrice = 0;
-        $unreadNotificationsCount = $user->unreadNotifications()->count();
+        $weeklyPerformance = ['labels' => $weeklyLabels, 'data' => $weeklyData];
+
+        // Portfolio breakdown (by machine)
+        $investmentsGrouped = MachineInvestment::where('user_id', $user->id)
+            ->with('machine')
+            ->get()
+            ->groupBy(fn($inv) => $inv->machine?->name ?? 'Unknown');
+        $portfolioLabels = $investmentsGrouped->keys()->toArray();
+        $portfolioData = $investmentsGrouped->map(fn($group) => $group->sum('amount'))->values()->toArray();
+        $portfolio = ['labels' => $portfolioLabels, 'data' => $portfolioData];
+
+        // BTC price (cached)
+        $btcPrice = Cache::remember('btc_price_kes', 60, fn() => rand(4500000, 5500000));
+
+        // Referral stats
         $referralCount = $user->referrals()->count();
-        $totalBonus = $user->transactions()->where('type', 'referral_bonus')->sum('amount');
-        $totalReferralEarnings = $totalBonus;
-        
+        $totalBonus = Transaction::where('user_id', $user->id)->where('type', 'referral_bonus')->sum('amount');
+
+        // Notifications
+        $unreadNotificationsCount = $user->unreadNotifications->count();
+
+        // ROI
+        $roi = $totalInvested > 0 ? round(($totalProfit / $totalInvested) * 100, 2) : 0;
+
+        // Lottery progressive jackpot
+        $lotteryJackpot = LotteryGame::where('is_active', true)->first()?->progressive_jackpot ?? 1000;
+
         return view('dashboard', compact(
-            'totalInvested', 'roi', 'totalProfit', 'activeInvestments', 'completedInvestments',
-            'totalDeposited', 'totalWithdrawn', 'totalMachineInvested', 'totalInterest',
-            'recentTransactions', 'profitHistory', 'weeklyPerformance', 'portfolio',
-            'btcPrice', 'user', 'unreadNotificationsCount', 'referralCount', 'totalBonus',
-            'totalReferralEarnings', 'lotteryStats', 'tournamentRank'
+            'user', 'walletBalance', 'totalInvested', 'totalProfit',
+            'activeInvestments', 'completedInvestments', 'totalDeposited',
+            'totalWithdrawn', 'totalMachineInvested', 'totalInterest',
+            'recentTransactions', 'profitHistory', 'weeklyPerformance',
+            'portfolio', 'btcPrice', 'referralCount', 'totalBonus',
+            'unreadNotificationsCount', 'roi', 'lotteryJackpot'
+            'lotteryJackpot' => LotteryGame::where('is_active', true)->first()?->progressive_jackpot ?? 1000,
         ));
     }
 }

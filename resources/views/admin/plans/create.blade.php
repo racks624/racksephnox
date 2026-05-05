@@ -1,46 +1,20 @@
 @extends('admin.layouts.app')
-
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold">Create Investment Plan</h2>
-    <a href="{{ route('admin.plans.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded">Back</a>
-</div>
-
-<div class="bg-white p-6 rounded-lg shadow max-w-lg">
-    <form method="POST" action="{{ route('admin.plans.store') }}">
-        @csrf
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Name</label>
-            <input type="text" name="name" required class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Description</label>
-            <textarea name="description" rows="3" class="w-full border rounded px-3 py-2"></textarea>
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Min Amount (KES)</label>
-            <input type="number" name="min_amount" step="0.01" required class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Max Amount (KES)</label>
-            <input type="number" name="max_amount" step="0.01" required class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Daily Interest Rate (%)</label>
-            <input type="number" name="daily_interest_rate" step="0.01" required class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Duration (days)</label>
-            <input type="number" name="duration_days" required class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Active?</label>
-            <select name="is_active" class="w-full border rounded px-3 py-2">
-                <option value="1">Yes</option>
-                <option value="0">No</option>
-            </select>
-        </div>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Create Plan</button>
-    </form>
-</div>
+<div class="admin-card p-6"><h1 class="text-2xl font-bold text-gold mb-4">Create New Plan</h1>
+<form method="POST" action="{{ route('admin.plans.store') }}">
+    @csrf
+    <div class="grid grid-cols-2 gap-4"><div><label>Name</label><input type="text" name="name" class="input-golden w-full" required></div>
+    <div><label>Description (optional)</label><textarea name="description" class="input-golden w-full"></textarea></div>
+    <div><label>Min Amount (KES)</label><input type="number" step="0.01" name="min_amount" class="input-golden w-full" required></div>
+    <div><label>Max Amount (KES)</label><input type="number" step="0.01" name="max_amount" class="input-golden w-full" required></div>
+    <div><label>Daily Interest Rate (%)</label><input type="number" step="0.01" name="daily_interest_rate" class="input-golden w-full" required></div>
+    <div><label>Duration (days)</label><input type="number" name="duration_days" class="input-golden w-full" required></div>
+    <div><label><input type="checkbox" name="is_active" value="1" checked> Active</label></div>
+    <div><label><input type="checkbox" name="allow_auto_reinvest" value="1"> Auto-reinvest</label></div>
+    <div><label><input type="checkbox" name="allow_early_withdrawal" value="1" checked> Allow early withdrawal</label></div>
+    <div><label>Early withdrawal penalty (%)</label><input type="number" step="0.01" name="early_withdrawal_penalty" value="20" class="input-golden w-full"></div>
+    <div><label>Max reinvestment cycles</label><input type="number" name="max_reinvestment_cycles" value="1" class="input-golden w-full"></div>
+    <div><label><input type="checkbox" name="is_infinite" value="1"> Infinite plan</label></div></div>
+    <button type="submit" class="btn-golden mt-4">Create Plan</button>
+</form></div>
 @endsection

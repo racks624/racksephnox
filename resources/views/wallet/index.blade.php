@@ -10,29 +10,21 @@
                     <div class="flex justify-between items-center mb-4">
                         <h1 class="text-2xl font-bold text-gold">💎 Sacred Treasury</h1>
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="flex items-center gap-1 text-sm text-gold-400 hover:text-gold">
-                                <i class="fas fa-globe"></i> <span>{{ auth()->user()->preferred_currency ?? 'KES' }}</span>
-                            </button>
+                            <button @click="open = !open" class="flex items-center gap-1 text-sm text-gold-400 hover:text-gold"><i class="fas fa-globe"></i> <span>{{ auth()->user()->preferred_currency ?? 'KES' }}</span></button>
                             <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-32 bg-cosmic-deep/95 backdrop-blur rounded-xl border border-gold/30 shadow-xl z-50">
-                                <a href="#" onclick="setCurrency('KES')" class="block px-4 py-2 text-sm hover:bg-gold/10">KES</a>
-                                <a href="#" onclick="setCurrency('USD')" class="block px-4 py-2 text-sm hover:bg-gold/10">USD</a>
-                                <a href="#" onclick="setCurrency('EUR')" class="block px-4 py-2 text-sm hover:bg-gold/10">EUR</a>
-                                <a href="#" onclick="setCurrency('BTC')" class="block px-4 py-2 text-sm hover:bg-gold/10">BTC</a>
-                                <a href="#" onclick="setCurrency('ETH')" class="block px-4 py-2 text-sm hover:bg-gold/10">ETH</a>
-                                <a href="#" onclick="setCurrency('USDT')" class="block px-4 py-2 text-sm hover:bg-gold/10">USDT</a>
+                                <button onclick="setCurrency('KES')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">KES</button>
+                                <button onclick="setCurrency('USD')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">USD</button>
+                                <button onclick="setCurrency('EUR')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">EUR</button>
+                                <button onclick="setCurrency('BTC')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">BTC</button>
+                                <button onclick="setCurrency('ETH')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">ETH</button>
+                                <button onclick="setCurrency('USDT')" class="block px-4 py-2 text-sm hover:bg-gold/10 w-full text-left">USDT</button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Balance Display -->
                     <div class="text-center mb-8">
                         <p class="text-gold-400 text-sm">Available Balance</p>
-                        <p class="text-5xl font-bold text-gold shimmer-gold" id="walletBalanceDisplay">
-                            {{ auth()->user()->preferred_currency ?? 'KES' }} {{ number_format($balance, 2) }}
-                        </p>
+                        <p class="text-5xl font-bold text-gold shimmer-gold">{{ $currency }} {{ number_format($balance, 2) }}</p>
                     </div>
-
-                    <!-- Multi‑currency balances -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center mb-6">
                         <div class="bg-black/30 rounded-xl p-2"><p class="text-xs text-ivory/60">KES</p><p class="text-lg font-bold text-gold">{{ number_format($wallet->balance, 2) }}</p></div>
                         <div class="bg-black/30 rounded-xl p-2"><p class="text-xs text-ivory/60">USD</p><p class="text-lg font-bold text-gold">{{ number_format($wallet->balance_usd, 2) }}</p></div>
@@ -41,12 +33,7 @@
                         <div class="bg-black/30 rounded-xl p-2"><p class="text-xs text-ivory/60">ETH</p><p class="text-lg font-bold text-gold">{{ number_format($wallet->balance_eth, 8) }}</p></div>
                         <div class="bg-black/30 rounded-xl p-2"><p class="text-xs text-ivory/60">USDT</p><p class="text-lg font-bold text-gold">{{ number_format($wallet->balance_usdt, 2) }}</p></div>
                     </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex flex-wrap gap-4 justify-center">
-                        <a href="{{ route('deposit.form') }}" class="btn-golden">Deposit</a>
-                        <a href="{{ route('withdrawal.form') }}" class="btn-outline-silver">Withdraw</a>
-                    </div>
+                    <div class="flex flex-wrap gap-4 justify-center"><a href="{{ route('deposit.form') }}" class="btn-golden">Deposit</a><a href="{{ route('withdrawal.form') }}" class="btn-outline-silver">Withdraw</a></div>
                 </div>
             </div>
 
@@ -63,26 +50,10 @@
                         <div class="flex justify-between border-t border-gold/20 pt-2 mt-2"><span class="text-ivory/60">Net Profit:</span><span class="text-green-400">KES {{ number_format($totalWon - $totalWagered, 2) }}</span></div>
                     </div>
                 </div>
-                <div class="card-golden p-6">
-                    <h3 class="text-xl font-bold text-gold mb-4">📜 Quick Actions</h3>
-                    <div class="space-y-2">
-                        <a href="{{ route('transactions.index') }}" class="block text-gold-400 hover:text-gold">📋 Transaction History →</a>
-                        <a href="{{ route('lottery.index') }}" class="block text-gold-400 hover:text-gold">🎰 Play Lottery →</a>
-                        <a href="{{ route('bonus-wheel.index') }}" class="block text-gold-400 hover:text-gold">🎡 Bonus Wheel →</a>
-                    </div>
-                </div>
+                <div class="card-golden p-6"><h3 class="text-xl font-bold text-gold mb-4">📜 Quick Actions</h3><div class="space-y-2"><a href="{{ route('transactions.index') }}" class="block text-gold-400 hover:text-gold">📋 Transaction History →</a><a href="{{ route('lottery.index') }}" class="block text-gold-400 hover:text-gold">🎰 Play Lottery →</a><a href="{{ route('bonus-wheel.index') }}" class="block text-gold-400 hover:text-gold">🎡 Bonus Wheel →</a></div></div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-function setCurrency(currency) {
-    fetch('/api/wallet/currency', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-        body: JSON.stringify({ currency: currency })
-    }).then(() => location.reload());
-}
-</script>
+<script>function setCurrency(currency) { fetch('/api/wallet/currency', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ currency: currency }) }).then(() => location.reload()); }</script>
 @endsection

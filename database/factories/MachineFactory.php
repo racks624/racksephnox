@@ -1,19 +1,14 @@
 <?php
-
 namespace Database\Factories;
-
 use App\Models\Machine;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
 class MachineFactory extends Factory
 {
     protected $model = Machine::class;
-
     public function definition()
     {
         $phi = 1.61803398875;
         $vip1 = $this->faker->numberBetween(1000, 50000);
-        
         return [
             'code' => $this->faker->unique()->regexify('[A-Z]{3}[0-9]{3}'),
             'name' => $this->faker->words(3, true),

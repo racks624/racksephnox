@@ -1,0 +1,254 @@
+/* ========================================
+   Racksephnox – Cosmic Luminous Green + Divine Golden
+   High Contrast, Accessible, Vibrant
+   ======================================== */
+
+:root {
+    --bg-deep: #0A0F1E;
+    --bg-mid: #1A1B3A;
+    --bg-card: rgba(26, 27, 58, 0.85);
+    --green-vibrant: #00FF88;
+    --green-dark: #00CC66;
+    --gold: #D4AF37;
+    --gold-light: #FFD700;
+    --gold-dark: #B8860B;
+    --text-light: #FFFFFF;
+    --text-muted: #E0E0E0;
+    --text-dim: #C0C0C0;
+    --focus-glow: 0 0 0 3px rgba(0, 255, 136, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: radial-gradient(ellipse at 30% 40%, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    color: var(--text-light);
+    font-family: 'Figtree', 'Inter', system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+/* High contrast text */
+h1, h2, h3, h4, p, span, a, button, label {
+    color: var(--text-muted);
+}
+.text-ivory, .text-ivory\/70, .text-ivory\/50 {
+    color: var(--text-muted) !important;
+}
+
+/* Cards – Glass with Golden & Green accent */
+.card-golden {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+.card-golden:hover {
+    border-color: var(--gold-light);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 20px rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Buttons – Golden + Green hover */
+.btn-golden {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #0A0F1E;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 48px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+.btn-golden:hover {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.5);
+    transform: translateY(-2px);
+}
+.btn-golden:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-glow);
+}
+.btn-outline-silver {
+    background: transparent;
+    border: 2px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 24px;
+    border-radius: 48px;
+    font-weight: 600;
+}
+.btn-outline-silver:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--gold-light);
+    color: var(--gold-light);
+}
+
+/* Navigation */
+.nav-golden {
+    background: rgba(10, 15, 30, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gold);
+}
+.nav-link-golden {
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 0.5rem 0;
+    transition: color 0.2s;
+}
+.nav-link-golden:hover,
+.nav-link-golden.active {
+    color: var(--gold-light);
+}
+.nav-link-golden::after {
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+}
+
+/* Headings – Golden Shimmer */
+h1, .golden-title {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--green-vibrant), var(--gold));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.shimmer-gold {
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--green-vibrant), var(--gold));
+    background-size: 300% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer 4s infinite;
+}
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Stats Cards */
+.stat-card {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 24px;
+    transition: all 0.2s;
+}
+.stat-card:hover {
+    border-color: var(--gold-light);
+    background: rgba(0, 0, 0, 0.7);
+    transform: translateY(-4px);
+}
+.stat-value {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: 800;
+    font-size: 2.2rem;
+}
+
+/* Quick Navigation – Icons + Labels, neatly organised */
+.quick-nav-item {
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 24px;
+    padding: 12px 8px;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+.quick-nav-item i {
+    font-size: 1.8rem;
+    color: var(--gold-light);
+    transition: transform 0.2s;
+}
+.quick-nav-item span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+.quick-nav-item:hover {
+    background: rgba(212, 175, 55, 0.25);
+    transform: translateY(-3px);
+}
+.quick-nav-item:hover i {
+    transform: scale(1.1);
+    text-shadow: 0 0 8px var(--gold-light);
+}
+
+/* Input fields – larger, accessible */
+.input-golden {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 14px 18px;
+    color: var(--text-light);
+    font-size: 1rem;
+    width: 100%;
+}
+.input-golden:focus {
+    outline: none;
+    border-color: var(--gold-light);
+    box-shadow: var(--focus-glow);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #0A0F1E; }
+::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--gold), var(--green-vibrant)); border-radius: 10px; }
+
+/* Sacred Phrase – high contrast */
+.sacred-phrase {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    background: linear-gradient(135deg, var(--gold-light), var(--green-vibrant));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: 600;
+}
+
+/* Lottery reels */
+.reel {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.animate-spin-once {
+    animation: spinOnce 0.4s ease-out;
+}
+@keyframes spinOnce {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Admin panel overrides */
+.admin-card {
+    background: var(--bg-card);
+    border: 1px solid var(--gold);
+}
+.admin-sidebar a.active {
+    background: rgba(212, 175, 55, 0.2);
+    border-left: 4px solid var(--gold-light);
+}
+/* Focus outlines for keyboard navigation */
+a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-glow);
+}

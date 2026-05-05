@@ -12,19 +12,21 @@ use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\CryptoController;
 use App\Http\Controllers\Api\MachineController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\InvestmentController;
-use App\Http\Controllers\LotteryController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\LotteryController as ApiLotteryController;
+use App\Http\Controllers\Api\V2\MachineController as V2MachineController;
+use App\Http\Controllers\Api\V2\PortfolioController;
+use App\Http\Controllers\Api\V2\WealthTaxController;
 use Illuminate\Support\Facades\Route;
 
-// Health Check
+// Health check
 Route::get('/health', function () {
     return response()->json(['status' => 'healthy', 'timestamp' => now()]);
 });
 
-// API V1
+// API v1
 Route::prefix('v1')->group(function () {
-    // Public routes (no auth)
+
+    // Public routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('api.mpesa.callback');
@@ -33,33 +35,147 @@ Route::prefix('v1')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-    // Protected routes (auth:sanctum)
-    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    // Protected routes
+    Route::middleware('auth:sanctum')->group(function () {
+
         // Auth
         Route::get('/user', [AuthController::class, 'user']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::put('/user/profile', [AuthController::class, 'updateProfile']);
         Route::put('/user/password', [AuthController::class, 'updatePassword']);
 
-        // Wallet (including multi-currency)
+        // Wallet
         Route::prefix('wallet')->group(function () {
             Route::get('/balance', [WalletController::class, 'balance']);
             Route::get('/transactions', [WalletController::class, 'transactions']);
             Route::post('/transfer', [WalletController::class, 'transfer']);
             Route::get('/summary', [WalletController::class, 'summary']);
-            Route::post('/currency', [WalletController::class, 'setCurrency']); // new
         });
 
-        // Trading, Machines, KYC, Deposit, Withdrawal, Transactions, Referrals, Crypto, Notifications
-        // ... (keep existing routes)
+        // Trading API
+        Route::prefix('trading')->group(function () {
+            Route::get('/balance', [TradingController::class, 'balance']);
+            Route::get('/price', [TradingController::class, 'price']);
+            Route::post('/buy', [TradingController::class, 'buy']);
+            Route::post('/sell', [TradingController::class, 'sell']);
+            Route::get('/orders', [TradingController::class, 'orders']);
+        });
+
+        // Machines API
+        Route::prefix('machines')->group(function () {
+            Route::get('/', [MachineController::class, 'index']);
+            Route::get('/{code}', [MachineController::class, 'show']);
+            Route::post('/{machine}/invest', [MachineController::class, 'invest']);
+            Route::get('/{investment}/status', [MachineController::class, 'status']);
+            Route::get('/my-investments', [MachineController::class, 'myInvestments']);
+        });
+
+        // KYC API
+        Route::prefix('kyc')->group(function () {
+            Route::get('/status', [KycController::class, 'status']);
+            Route::post('/upload', [KycController::class, 'upload']);
+            Route::post('/verify-id', [KycController::class, 'verifyId']);
+        });
+
+        // Deposit API
+        Route::prefix('deposit')->group(function () {
+            Route::get('/pochi-number', [DepositController::class, 'getPochiNumber']);
+            Route::post('/submit', [DepositController::class, 'submitRequest']);
+            Route::get('/history', [DepositController::class, 'history']);
+            Route::get('/status/{id}', [DepositController::class, 'status']);
+            Route::post('/stk', [DepositController::class, 'stkPush']);
+        });
+
+        // Withdrawal API
+        Route::prefix('withdrawal')->group(function () {
+            Route::post('/submit', [WithdrawalController::class, 'submitRequest']);
+            Route::get('/history', [WithdrawalController::class, 'history']);
+            Route::get('/status/{id}', [WithdrawalController::class, 'status']);
+            Route::post('/bank-account', [WithdrawalController::class, 'addBankAccount']);
+            Route::delete('/bank-account/{id}', [WithdrawalController::class, 'removeBankAccount']);
+        });
+
+        // Transactions API
+        Route::prefix('transactions')->group(function () {
+            Route::get('/', [TransactionController::class, 'index']);
+            Route::get('/export', [TransactionController::class, 'export']);
+            Route::get('/summary', [TransactionController::class, 'summary']);
+            Route::get('/types', [TransactionController::class, 'types']);
+        });
+
+        // Referrals API
+        Route::prefix('referrals')->group(function () {
+            Route::get('/stats', [ReferralController::class, 'stats']);
+            Route::get('/list', [ReferralController::class, 'list']);
+            Route::get('/bonuses', [ReferralController::class, 'bonuses']);
+            Route::get('/link', [ReferralController::class, 'getLink']);
+        });
+
+        // Crypto API
+        Route::prefix('crypto')->group(function () {
+            Route::get('/prices', [CryptoController::class, 'prices']);
+            Route::get('/history', [CryptoController::class, 'history']);
+            Route::get('/market', [CryptoController::class, 'marketData']);
+        });
+
+        // Notifications API
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index']);
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
+            Route::delete('/{id}', [NotificationController::class, 'destroy']);
+            Route::delete('/', [NotificationController::class, 'destroyAll']);
+            Route::get('/preferences', [NotificationController::class, 'preferences']);
+            Route::post('/preferences', [NotificationController::class, 'updatePreferences']);
+        });
+
+        // Lottery API (real‑time data)
+        Route::prefix('lottery')->group(function () {
+            Route::get('/jackpot', [ApiLotteryController::class, 'jackpot']);
+            Route::get('/leaderboard', [ApiLotteryController::class, 'leaderboard']);
+            Route::get('/achievements', [ApiLotteryController::class, 'achievements']);
+            Route::get('/recent-wins', [ApiLotteryController::class, 'recentWins']);
+            Route::get('/my-stats', [ApiLotteryController::class, 'myStats']);
+        });
+
+        // Dashboard stats (simple)
+        Route::get('/dashboard/stats', function (\Illuminate\Http\Request $request) {
+            $user = $request->user();
+            return response()->json([
+                'wallet_balance' => $user->wallet?->balance ?? 0,
+                'total_invested' => $user->machineInvestments()->sum('amount'),
+                'active_investments' => $user->machineInvestments()->where('status', 'active')->count(),
+                'total_profit' => $user->machineInvestments()->sum('profit_credited'),
+                'total_referrals' => $user->referrals()->count(),
+                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+            ]);
+        });
+
+        // Referral link shortcut
+        Route::get('/referral-stats', function (\Illuminate\Http\Request $request) {
+            $user = $request->user();
+            return response()->json([
+                'total_referrals' => $user->referrals()->count(),
+                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
+                'referral_link' => url('/register?ref=' . $user->referral_code),
+            ]);
+        });
+
+        // Crypto prices shortcut
+        Route::get('/crypto-prices', function () {
+            return response()->json(\App\Models\CryptoPrice::latest()->take(5)->get());
+        });
     });
 });
 
-// API V2 (rate limited as well)
+// API v2 (enhanced)
 Route::prefix('v2')->group(function () {
-    Route::get('/health', function () { return response()->json(['version' => '2.0', 'status' => 'healthy']); });
-    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-        Route::get('/user/profile', function (Request $request) {
+    Route::get('/health', function () {
+        return response()->json(['version' => '2.0', 'status' => 'healthy']);
+    });
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user/profile', function (\Illuminate\Http\Request $request) {
             $user = $request->user();
             return response()->json([
                 'id' => $user->id,
@@ -68,18 +184,18 @@ Route::prefix('v2')->group(function () {
                 'phone' => $user->phone,
                 'kyc_status' => $user->kyc_status,
                 'is_verified' => $user->is_verified,
-                'wallet_balance' => $user->wallet->balance ?? 0,
+                'wallet_balance' => $user->wallet?->balance ?? 0,
             ]);
         });
-        Route::get('/machines', [App\Http\Controllers\Api\V2\MachineController::class, 'index']);
-        Route::get('/machines/{code}', [App\Http\Controllers\Api\V2\MachineController::class, 'show']);
-        Route::post('/machines/{machine}/invest', [App\Http\Controllers\Api\V2\MachineController::class, 'invest']);
-        Route::get('/portfolio/summary', [App\Http\Controllers\Api\V2\PortfolioController::class, 'summary']);
-        Route::get('/wealth-tax/history', [App\Http\Controllers\Api\V2\WealthTaxController::class, 'history']);
+        Route::get('/machines', [V2MachineController::class, 'index']);
+        Route::get('/machines/{code}', [V2MachineController::class, 'show']);
+        Route::post('/machines/{machine}/invest', [V2MachineController::class, 'invest']);
+        Route::get('/portfolio/summary', [PortfolioController::class, 'summary']);
+        Route::get('/wealth-tax/history', [WealthTaxController::class, 'history']);
     });
 });
 
-// API Info
+// API version info
 Route::get('/v1/info', function () {
     return response()->json([
         'version' => '1.0.0',
@@ -94,55 +210,41 @@ Route::get('/v1/info', function () {
             'deposit' => '/v1/deposit/*',
             'withdrawal' => '/v1/withdrawal/*',
             'notifications' => '/v1/notifications/*',
-        ]
+            'lottery' => '/v1/lottery/*',
+        ],
     ]);
 });
 
-// LOTTERY API (with rate limiting)
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('lottery')->group(function () {
-    Route::get('/jackpot', [LotteryController::class, 'jackpotStatus']);
-    Route::get('/free-spin-status', function () {
-        $game = \App\Models\LotteryGame::where('is_active', true)->first();
-        $service = new \App\Services\LotteryService($game);
-        return response()->json(['available' => $service->canUseFreeSpin(Auth::user())]);
+    // Lottery API (real‑time data)
+    Route::prefix('lottery')->group(function () {
+        Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
+        Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
+        Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
+        Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
+        Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
     });
-    Route::get('/next-free-spin', function () {
-        $game = \App\Models\LotteryGame::where('is_active', true)->first();
-        $service = new \App\Services\LotteryService($game);
-        return response()->json(['hours' => $service->getNextFreeSpinHours(Auth::user())]);
+
+    // Lottery API (real‑time data)
+    Route::prefix('lottery')->group(function () {
+        Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
+        Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
+        Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
+        Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
+        Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
     });
-    Route::get('/user-stats', function () {
-        $user = Auth::user();
-        $stats = [
-            'total_spins' => \App\Models\LotterySpin::where('user_id', $user->id)->count(),
-            'total_won' => \App\Models\LotterySpin::where('user_id', $user->id)->sum('win_amount'),
-            'mini_jackpot_hits' => \App\Models\LotterySpin::where('user_id', $user->id)->where('mini_jackpot_hit', true)->count(),
-            'super_jackpot_hits' => \App\Models\LotterySpin::where('user_id', $user->id)->where('super_jackpot_hit', true)->count(),
-            'total_tax_contributed' => \App\Models\LotterySpin::where('user_id', $user->id)->sum('tax_contribution'),
-        ];
-        return response()->json($stats);
-    });
-    Route::post('/verify', [LotteryController::class, 'verifySpin']);
-    Route::get('/prediction', [LotteryController::class, 'prediction']);
-    Route::get('/bonus-wheel/segments', function () {
-        $wheel = \App\Models\LotteryBonusWheel::where('is_active', true)->first();
-        return response()->json($wheel ? $wheel->segments : []);
-    });
-    Route::post('/demo-spin', function (\Illuminate\Http\Request $request) {
-        $names = ['divine_sword','divine_bell','golden_flower','frequency_8888','frequency_7777','taurus','tree_of_life','divine_star'];
-        $symbols = [];
-        for ($i=0;$i<3;$i++) $symbols[] = (object)['name' => $names[array_rand($names)], 'display_name' => '', 'icon' => ''];
-        $winMultiplier = rand(0, 50);
-        $miniJackpot = rand(1,100) <= 5;
-        $superJackpot = rand(1,10000) === 1;
-        $winAmount = $superJackpot ? 200000 : ($miniJackpot ? 5000 : $winMultiplier * $request->bet);
-        return response()->json([
-            'success' => true,
-            'symbols' => array_map(fn($s) => ['name' => $s->name, 'display_name' => $s->name, 'icon' => ''], $symbols),
-            'win_amount' => $winAmount,
-            'mini_jackpot' => $miniJackpot,
-            'super_jackpot' => $superJackpot,
-            'free_spin_trigger' => false,
-        ]);
-    });
+
+// Lottery API (real‑time data)
+Route::middleware('auth:sanctum')->prefix('v1/lottery')->group(function () {
+    Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
+    Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
+    Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
+    Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
+    Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
+});
+Route::middleware('auth:sanctum')->prefix('v1/lottery')->group(function () {
+    Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
+    Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
+    Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
+    Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
+    Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
 });

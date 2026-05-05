@@ -1,23 +1,14 @@
 <?php
-
 namespace App\Notifications;
-
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-
 class DepositConfirmed extends Notification implements ShouldQueue
 {
     use Queueable;
-
     protected $transaction;
-
-    public function __construct($transaction)
-    {
-        $this->transaction = $transaction;
-    }
-
+    public function __construct($transaction) { $this->transaction = $transaction; }
     public function via($notifiable)
     {
         $prefs = $notifiable->notification_preferences ?? [];
@@ -27,7 +18,6 @@ class DepositConfirmed extends Notification implements ShouldQueue
         if ($prefs['broadcast_deposit'] ?? false) $channels[] = 'broadcast';
         return $channels;
     }
-
     public function toMail($notifiable)
     {
         return (new MailMessage)
@@ -37,13 +27,8 @@ class DepositConfirmed extends Notification implements ShouldQueue
             ->action('View Wallet', url('/wallet'))
             ->line('Thank you for investing with Racksephnox.');
     }
-
     public function toArray($notifiable)
     {
-        return [
-            'message' => "Deposit of KES " . number_format($this->transaction->amount, 2) . " completed.",
-            'icon' => '💰',
-            'category' => 'deposit',
-        ];
+        return ['message' => "Deposit of KES " . number_format($this->transaction->amount, 2) . " completed.", 'icon' => '💰', 'category' => 'deposit'];
     }
 }

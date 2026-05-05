@@ -1,82 +1,61 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use App\Models\CryptoPrice;
 use App\Models\TradeOrder;
 use App\Models\TradingAccount;
-use App\Models\BtcPriceHistory;
+use App\Models\TradingPair;
+use App\Models\CryptoPrice;
 use App\Services\Trading\TradingEngine;
+use App\Services\Trading\ChartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class TradingController extends Controller
 {
-    protected $tradingEngine;
-
-    public function __construct(TradingEngine $tradingEngine)
+    protected $engine;
+    protected $pair;
+    public function __construct()
     {
-        $this->tradingEngine = $tradingEngine;
+        $this->pair = TradingPair::where('symbol', 'BTCUSDT')->firstOrFail();
+        $this->engine = new TradingEngine($this->pair);
     }
 
     public function index()
     {
         $user = Auth::user();
-        $tradingAccount = $user->tradingAccount ?? $user->tradingAccount()->create(['balance' => 0]);
-        $wallet = $user->wallet;
+        $tradingAccount = $user->tradingAccount ?? TradingAccount::create(['user_id' => $user->id]);
+        $btcPrice = $this->engine->getMarketPrice();
+        $openOrders = TradeOrder::where('user_id', $user->id)->whereIn('status', ['pending', 'partial'])->latest()->get();
+        $orderHistory = TradeOrder::where('user_id', $user->id)->where('status', 'completed')->latest()->take(20)->get();
+        $orderBook = $this->engine->getOrderBook();
+        $chart = new ChartService();
+        $candles = $chart->getCandles($this->pair->id, '1h', 100);
+        $labels = $candles->pluck('open_time')->map(fn($d) => $d->format('H:i'));
+        $prices = $candles->pluck('close');
 
-        $btcPrice = $this->tradingEngine->getMarketPrice();
-        $btcBalance = $this->tradingEngine->getBtcBalance($user->id);
-
-        // Open orders (pending/partial)
-        $openOrders = TradeOrder::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'partial'])
-            ->latest()
-            ->get();
-
-        // Completed orders (last 20)
-        $completedOrders = TradeOrder::where('user_id', $user->id)
-            ->where('status', 'completed')
-            ->latest()
-            ->take(20)
-            ->get();
-
-        // Price history for chart (last 30 days)
-        $priceHistory = BtcPriceHistory::where('recorded_at', '>=', now()->subDays(30))
-            ->orderBy('recorded_at')
-            ->get();
-
-        // Stats
-        $totalBuyVolume = TradeOrder::where('user_id', $user->id)->where('side', 'buy')->where('status', 'completed')->sum('filled_amount');
-        $totalSellVolume = TradeOrder::where('user_id', $user->id)->where('side', 'sell')->where('status', 'completed')->sum('filled_amount');
-        $totalInvested = TradeOrder::where('user_id', $user->id)->where('side', 'buy')->where('status', 'completed')->sum('filled_kes');
-        $totalRealized = TradeOrder::where('user_id', $user->id)->where('side', 'sell')->where('status', 'completed')->sum('filled_kes');
-        $pnl = $totalRealized - $totalInvested;
-
-        return view('trading', compact(
-            'tradingAccount', 'wallet', 'btcPrice', 'btcBalance', 'openOrders', 'completedOrders', 'priceHistory',
-            'totalBuyVolume', 'totalSellVolume', 'totalInvested', 'totalRealized', 'pnl'
+        return view('trading.index', compact(
+            'tradingAccount', 'btcPrice', 'openOrders', 'orderHistory',
+            'orderBook', 'candles', 'labels', 'prices'
         ));
     }
 
     public function buy(Request $request)
     {
         $request->validate([
-            'amount_btc' => 'required|numeric|min:0.0001',
-            'order_type' => 'required|in:market,limit',
-            'limit_price' => 'required_if:order_type,limit|numeric|min:0',
+            'amount_btc' => 'required|numeric|min:' . $this->pair->min_trade_amount,
+            'order_type' => 'required|in:market,limit,stop',
+            'price' => 'required_if:order_type,limit,stop|numeric|min:0',
+            'take_profit' => 'nullable|numeric|min:0',
+            'stop_loss' => 'nullable|numeric|min:0',
+            'time_in_force' => 'in:GTC,IOC,FOK'
         ]);
-
         try {
-            $order = $this->tradingEngine->placeOrder(
-                Auth::user(),
-                'buy',
-                $request->order_type,
-                $request->amount_btc,
-                $request->order_type === 'limit' ? $request->limit_price : null
+            $order = $this->engine->placeOrder(
+                Auth::user(), 'buy', $request->order_type, $request->amount_btc,
+                $request->price ?? null, $request->stop_price ?? null,
+                $request->take_profit, $request->stop_loss, $request->time_in_force ?? 'GTC'
             );
-            return redirect()->route('trading')->with('success', 'Order placed successfully.');
+            return back()->with('success', "Buy order placed. Order #{$order->id}");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -85,20 +64,19 @@ class TradingController extends Controller
     public function sell(Request $request)
     {
         $request->validate([
-            'amount_btc' => 'required|numeric|min:0.0001',
-            'order_type' => 'required|in:market,limit',
-            'limit_price' => 'required_if:order_type,limit|numeric|min:0',
+            'amount_btc' => 'required|numeric|min:' . $this->pair->min_trade_amount,
+            'order_type' => 'required|in:market,limit,stop',
+            'price' => 'required_if:order_type,limit,stop|numeric|min:0',
+            'take_profit' => 'nullable|numeric|min:0',
+            'stop_loss' => 'nullable|numeric|min:0'
         ]);
-
         try {
-            $order = $this->tradingEngine->placeOrder(
-                Auth::user(),
-                'sell',
-                $request->order_type,
-                $request->amount_btc,
-                $request->order_type === 'limit' ? $request->limit_price : null
+            $order = $this->engine->placeOrder(
+                Auth::user(), 'sell', $request->order_type, $request->amount_btc,
+                $request->price ?? null, $request->stop_price ?? null,
+                $request->take_profit, $request->stop_loss
             );
-            return redirect()->route('trading')->with('success', 'Order placed successfully.');
+            return back()->with('success', "Sell order placed. Order #{$order->id}");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -106,43 +84,23 @@ class TradingController extends Controller
 
     public function cancelOrder(TradeOrder $order)
     {
-        if ($order->user_id !== Auth::id()) abort(403);
-        if (!in_array($order->status, ['pending', 'partial'])) {
-            return back()->withErrors(['error' => 'Order cannot be cancelled']);
+        if ($order->user_id !== Auth::id() || !in_array($order->status, ['pending', 'partial'])) {
+            return back()->withErrors('Cannot cancel');
         }
-        $order->update(['status' => 'cancelled']);
-        return back()->with('success', 'Order cancelled.');
+        $order->status = 'cancelled';
+        $order->save();
+        return back()->with('success', 'Order cancelled');
     }
 
-    public function transfer(Request $request)
+    public function orderBook()
     {
-        // Transfer between wallet and trading account (same as before)
-        $request->validate([
-            'amount' => 'required|numeric|min:10',
-            'direction' => 'required|in:to_trading,to_wallet',
-        ]);
-        // ... existing transfer logic (unchanged)
+        return response()->json($this->engine->getOrderBook());
     }
 
-    public function apiBalance()
+    public function candles(Request $request, $interval = '1h')
     {
-        $user = Auth::user();
-        return response()->json([
-            'wallet_balance' => $user->wallet->balance,
-            'trading_balance' => $user->tradingAccount->balance ?? 0,
-            'btc_balance' => $this->tradingEngine->getBtcBalance($user->id),
-        ]);
-    }
-
-    public function apiPrice()
-    {
-        return response()->json(['price_kes' => $this->tradingEngine->getMarketPrice()]);
-    }
-
-    public function apiOrders()
-    {
-        $user = Auth::user();
-        $orders = TradeOrder::where('user_id', $user->id)->latest()->take(50)->get();
-        return response()->json($orders);
+        $chart = new ChartService();
+        $candles = $chart->getCandles($this->pair->id, $interval, 100);
+        return response()->json($candles);
     }
 }

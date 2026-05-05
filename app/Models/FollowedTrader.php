@@ -2,18 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FollowedTrader extends Model
 {
-    use HasFactory;
-
-    protected $table = 'followed_traders';
-
-    protected $fillable = [
-        'follower_id', 'trader_id', 'copy_ratio', 'auto_copy', 'max_copy_amount'
-    ];
+    protected $fillable = ['follower_id', 'trader_id', 'copy_ratio', 'auto_copy', 'max_copy_amount'];
 
     protected $casts = [
         'copy_ratio' => 'decimal:2',

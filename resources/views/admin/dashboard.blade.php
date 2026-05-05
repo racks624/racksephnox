@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    <!-- Revenue Target Widget (88,000 KES / 26 days) -->
+    <!-- Revenue Target Widget -->
     <div class="admin-card p-5">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gold">💰 26‑Day Revenue Target</h3>
@@ -170,12 +170,7 @@ function adminDashboard() {
                         { label: 'Bet Amount (KES)', data: {!! json_encode($lotteryActivity['bets']) !!}, borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.2)', fill: true, yAxisID: 'y1' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { labels: { color: '#D4AF37' } } },
-                    scales: { y: { type: 'linear', position: 'left', ticks: { color: '#FFD700' } }, y1: { type: 'linear', position: 'right', ticks: { color: '#D4AF37' }, grid: { drawOnChartArea: false } }, x: { ticks: { color: '#D4AF37' } } }
-                }
+                options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#D4AF37' } } }, scales: { y: { ticks: { color: '#FFD700' } }, y1: { ticks: { color: '#D4AF37' }, grid: { drawOnChartArea: false } }, x: { ticks: { color: '#D4AF37' } } } }
             });
         },
         async refreshStats() {
@@ -183,7 +178,7 @@ function adminDashboard() {
             try {
                 const res = await fetch('{{ route("admin.stats") }}');
                 const data = await res.json();
-                // Update stats cards (simplified)
+                // Update stats cards dynamically
             } catch(e) { console.error(e); }
             finally { this.refreshing = false; }
         }

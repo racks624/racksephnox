@@ -1,16 +1,13 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Closure;
-use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Http\Request;
 class Admin
 {
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
-        if (!Auth::check() || !Auth::user()->is_admin) {
-            abort(403, 'Unauthorized – Admin access only.');
+        if (!auth()->check() || !auth()->user()->is_admin) {
+            abort(403, 'Unauthorized. Admin privileges required.');
         }
         return $next($request);
     }

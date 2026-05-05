@@ -1,13 +1,13 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InvestmentWebController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\KycController;
-use App\Http\Controllers\MpesaController;
-use App\Http\Controllers\MachineController;
 use App\Http\Controllers\TradingController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\DepositController;
@@ -15,208 +15,112 @@ use App\Http\Controllers\WithdrawalController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\SocialTradingController;
-use App\Http\Controllers\LotteryController;
-use App\Http\Controllers\LotteryTournamentController;
-use App\Http\Controllers\LotteryMissionController;
-use App\Http\Controllers\LotteryBonusWheelController;
-use App\Http\Controllers\LotterySocialController;
+use App\Http\Controllers\LegalPagesController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+require __DIR__.'/auth.php';
+require __DIR__.'/admin.php';
+require __DIR__.'/lottery.php';
 
-// ==============================================
-// PUBLIC ROUTES (no authentication)
-// ==============================================
+// Public home
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/lang/{locale}', [LanguageController::class, 'switch'])->name('lang.switch');
-Route::get('/guide', [GuideController::class, 'index'])->name('guide');
-Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpesa.callback');
-
 // Legal pages
-Route::controller(App\Http\Controllers\LegalPagesController::class)->group(function () {
-    Route::get('/terms', 'terms')->name('terms');
-    Route::get('/privacy', 'privacy')->name('privacy');
-    Route::get('/cookies', 'cookies')->name('cookies');
-    Route::get('/compliance', 'compliance')->name('compliance');
-});
+Route::get('/terms', [LegalPagesController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy', [LegalPagesController::class, 'privacy'])->name('legal.privacy');
+Route::get('/guide', [GuideController::class, 'index'])->name('guide');
 
-// Public referral landing
-Route::get('/refer/{code}', [ReferralController::class, 'show'])->name('referral.show');
+// Language switcher
+Route::get('/lang/{locale}', [LanguageController::class, 'switch'])->name('lang.switch');
 
-// ==============================================
-// AUTHENTICATED ROUTES (require login & email verification)
-// ==============================================
+// Authenticated & verified routes
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Machines (RX Series)
-    Route::prefix('machines')->name('machines.')->group(function () {
-        Route::get('/', [MachineController::class, 'index'])->name('index');
-        Route::get('/{code}', [MachineController::class, 'show'])->name('show');
-        Route::post('/{machine}/invest', [MachineController::class, 'invest'])->name('invest');
-        Route::get('/investment/{investment}/status', [MachineController::class, 'status'])->name('status');
-        Route::get('/my-investments', [MachineController::class, 'myInvestments'])->name('my-investments');
-    });
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/notifications', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notifications.update');
+    Route::post('/profile/bank-account', [ProfileController::class, 'updateBankAccount'])->name('profile.bank-account.update');
+    Route::get('/api/profile-data', [ProfileController::class, 'apiData'])->name('profile.api.data');
 
-    // Trading (BTC)
-    Route::prefix('trading')->name('trading.')->group(function () {
-        Route::get('/', [TradingController::class, 'index'])->name('index');
-        Route::post('/transfer', [TradingController::class, 'transfer'])->name('transfer');
-        Route::post('/cancel/{order}', [TradingController::class, 'cancelOrder'])->name('cancel');
-    });
-
-    // Social Trading
-    Route::prefix('social-trading')->name('social-trading.')->group(function () {
-        Route::get('/leaderboard', [SocialTradingController::class, 'leaderboard'])->name('leaderboard');
-        Route::get('/profile/{username}', [SocialTradingController::class, 'traderProfile'])->name('profile');
-        Route::post('/follow/{trader}', [SocialTradingController::class, 'follow'])->name('follow');
-        Route::delete('/unfollow/{trader}', [SocialTradingController::class, 'unfollow'])->name('unfollow');
-        Route::get('/following', [SocialTradingController::class, 'followed'])->name('following');
-        Route::put('/following/{trader}/settings', [SocialTradingController::class, 'updateSettings'])->name('update-settings');
-    });
+    // Investments (legacy + unified)
+    Route::get('/investments', [InvestmentController::class, 'index'])->name('investments.index');
+    Route::get('/investments/{id}', [InvestmentController::class, 'show'])->name('investments.show');
+    Route::post('/investments', [InvestmentController::class, 'redirectToMachines'])->name('investments.store');
 
     // Wallet
-    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet');
-
-    // Deposit
-    Route::prefix('deposit')->name('deposit.')->group(function () {
-        Route::get('/', [DepositController::class, 'showForm'])->name('form');
-        Route::post('/submit', [DepositController::class, 'submitRequest'])->name('submit');
-        Route::get('/status', [DepositController::class, 'status'])->name('status');
-        Route::get('/history', [DepositController::class, 'history'])->name('history');
-    });
-
-    // Withdrawal
-    Route::prefix('withdrawal')->name('withdrawal.')->group(function () {
-        Route::get('/', [WithdrawalController::class, 'showForm'])->name('form');
-        Route::post('/submit', [WithdrawalController::class, 'submitRequest'])->name('submit');
-        Route::get('/history', [WithdrawalController::class, 'history'])->name('history');
-    });
+    Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
 
     // Transactions
-    Route::prefix('transactions')->name('transactions.')->group(function () {
-        Route::get('/', [TransactionController::class, 'index'])->name('index');
-        Route::get('/export', [TransactionController::class, 'exportCsv'])->name('export');
-    });
-
-    // Referrals
-    Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals');
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
 
     // KYC
     Route::get('/kyc', [KycController::class, 'index'])->name('kyc');
     Route::post('/kyc/upload', [KycController::class, 'upload'])->name('kyc.upload');
 
-    // Bank accounts
-    Route::resource('bank-accounts', BankAccountController::class);
-
-    // M-Pesa (internal)
-    Route::prefix('mpesa')->name('mpesa.')->group(function () {
-        Route::get('/deposit', [MpesaController::class, 'showDepositForm'])->name('deposit');
-        Route::post('/deposit', [MpesaController::class, 'initiateDeposit'])->name('deposit.initiate');
-        Route::get('/withdraw', [MpesaController::class, 'showWithdrawalForm'])->name('withdraw');
-        Route::post('/withdraw', [MpesaController::class, 'initiateWithdrawal'])->name('withdraw.initiate');
+    // Trading (advanced)
+    Route::prefix('trading')->name('trading.')->group(function () {
+        Route::get('/', [TradingController::class, 'index'])->name('index');
+        Route::post('/buy', [TradingController::class, 'buy'])->name('buy');
+        Route::post('/sell', [TradingController::class, 'sell'])->name('sell');
+        Route::post('/orders/{order}/cancel', [TradingController::class, 'cancelOrder'])->name('cancel');
+        Route::get('/order-book', [TradingController::class, 'orderBook'])->name('order-book');
+        Route::get('/candles/{interval}', [TradingController::class, 'candles'])->name('candles');
+        Route::get('/analytics', [TradingController::class, 'analytics'])->name('analytics');
     });
 
-    // Notifications
+    // Social Trading
+    Route::prefix('social-trading')->name('social-trading.')->group(function () {
+        Route::get('/leaderboard', [App\Http\Controllers\SocialTradingController::class, 'leaderboard'])->name('leaderboard');
+        Route::get('/profile/{username}', [App\Http\Controllers\SocialTradingController::class, 'traderProfile'])->name('profile');
+        Route::get('/profile/edit', [App\Http\Controllers\SocialTradingController::class, 'editProfile'])->name('profile.edit');
+        Route::post('/profile/update', [App\Http\Controllers\SocialTradingController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/follow/{trader}', [App\Http\Controllers\SocialTradingController::class, 'follow'])->name('follow');
+        Route::delete('/unfollow/{trader}', [App\Http\Controllers\SocialTradingController::class, 'unfollow'])->name('unfollow');
+        Route::get('/followed', [App\Http\Controllers\SocialTradingController::class, 'followed'])->name('followed');
+        Route::post('/settings/{trader}', [App\Http\Controllers\SocialTradingController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/copy-history', [App\Http\Controllers\SocialTradingController::class, 'copyHistory'])->name('copy-history');
+    });
+
+    // Referrals
+    Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals');
+
+    // Deposit (web forms)
+    Route::get('/deposit', [DepositController::class, 'form'])->name('deposit.form');
+    Route::post('/deposit', [DepositController::class, 'submit'])->name('deposit.submit');
+
+    // Withdrawal (web forms)
+    Route::get('/withdraw', [WithdrawalController::class, 'form'])->name('withdrawal.form');
+    Route::post('/withdraw', [WithdrawalController::class, 'submit'])->name('withdrawal.submit');
+
+    // Bank Accounts
+    Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
+
+    // Notifications (web)
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
-        Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences');
-        Route::post('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
-        Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('markAsRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllRead'])->name('markAllRead');
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('markAsRead');
         Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
         Route::delete('/', [NotificationController::class, 'destroyAll'])->name('destroyAll');
-        Route::delete('/category/{category}', [NotificationController::class, 'destroyByCategory'])->name('destroyByCategory');
-        Route::post('/test', [NotificationController::class, 'test'])->name('test')->middleware('admin');
+        Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences');
+        Route::post('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
     });
 
-    // Profile
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('update');
-        Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
-        Route::post('/notifications', [ProfileController::class, 'updateNotificationPreferences'])->name('notifications.update');
-        Route::post('/bank-account', [ProfileController::class, 'updateBankAccount'])->name('bank-account.update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
-        Route::get('/api/data', [ProfileController::class, 'apiData'])->name('api.data');
+    // Machines (web)
+    Route::prefix('machines')->name('machines.')->group(function () {
+        Route::get('/', [MachineController::class, 'index'])->name('index');
+        Route::get('/{code}', [MachineController::class, 'show'])->name('show');
+        Route::post('/{machine}/invest', [MachineController::class, 'invest'])->name('invest');
+        Route::get('/my-investments', [MachineController::class, 'myInvestments'])->name('my-investments');
+        Route::post('/{investment}/early-withdraw', [MachineController::class, 'earlyWithdraw'])->name('early-withdraw');
+        Route::get('/status/{investment}', [MachineController::class, 'status'])->name('status');
     });
 });
-
-// ==============================================
-// LEGACY / UNIFIED ROUTES
-// ==============================================
-Route::get('/my-investments', [InvestmentWebController::class, 'index'])
-    ->name('investments.unified')
-    ->middleware('auth');
-
-// ==============================================
-// INCLUDE ADMIN ROUTES (separate file)
-// ==============================================
-require __DIR__.'/admin.php';
-
-// ==============================================
-// INCLUDE AUTH ROUTES (Breeze)
-// ==============================================
-require __DIR__.'/auth.php';
-
-// Onboarding
-Route::middleware(['auth'])->group(function () {
-    Route::get('/onboarding', function () {
-        return view('onboarding.index');
-    })->name('onboarding');
-    Route::post('/api/user/complete-onboarding', function () {
-        auth()->user()->update(['onboarding_completed' => true]);
-        return response()->json(['success' => true]);
-    });
-    Route::get('/api/user/onboarding-status', function () {
-        $step = auth()->user()->onboarding_completed ? 4 : 0;
-        return response()->json(['step' => $step]);
-    });
-});
-
-// Early withdrawal
-Route::middleware(['auth'])->post('/machines/withdraw/{investment}', [App\Http\Controllers\MachineController::class, 'earlyWithdraw']);
-
-// Profile bank account routes
-Route::middleware(['auth'])->prefix('profile')->name('profile.')->group(function () {
-    Route::post('/bank-account', [App\Http\Controllers\ProfileController::class, 'addBankAccount'])->name('bank-account.add');
-    Route::put('/bank-account/{bankAccount}', [App\Http\Controllers\ProfileController::class, 'updateBankAccount'])->name('bank-account.update');
-    Route::delete('/bank-account/{bankAccount}', [App\Http\Controllers\ProfileController::class, 'deleteBankAccount'])->name('bank-account.delete');
-    Route::post('/notifications', [App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('notifications.update');
-    Route::post('/two-factor/toggle', [App\Http\Controllers\ProfileController::class, 'toggleTwoFactor'])->name('two-factor.toggle');
-    Route::put('/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
-});
-
-// ==============================================
-// LOTTERY WEB ROUTES (Single, clean group – NO DUPLICATES)
-// ==============================================
-Route::middleware(['auth', 'verified'])->prefix('lottery')->name('lottery.')->group(function () {
-    // Core game routes
-    Route::get('/', [LotteryController::class, 'index'])->name('index');
-    Route::post('/spin', [LotteryController::class, 'spin'])->name('spin');
-    Route::post('/free-spin', [LotteryController::class, 'freeSpin'])->name('free-spin');
-    Route::get('/history', [LotteryController::class, 'history'])->name('history');
-    Route::get('/leaderboard/{period?}', [LotteryController::class, 'leaderboard'])->name('leaderboard');
-
-    // Feature routes
-    Route::get('/tournaments', [LotteryTournamentController::class, 'index'])->name('tournaments');
-    Route::get('/missions', [LotteryMissionController::class, 'index'])->name('missions');
-    Route::get('/bonus-wheel', [LotteryBonusWheelController::class, 'index'])->name('bonus-wheel');
-    Route::post('/bonus-wheel/spin', [LotteryBonusWheelController::class, 'spin'])->name('bonus-wheel.spin');
-    Route::get('/social', [LotterySocialController::class, 'feed'])->name('social');
-});
-// Alias for backward compatibility
-Route::middleware(['auth', 'verified'])->get('/lottery/bonus-wheel', [LotteryBonusWheelController::class, 'index'])->name('bonus-wheel.index');
-
-// Bonus Wheel Spin Route (POST)
-Route::middleware(['auth', 'verified'])->post('/lottery/bonus-wheel/spin', [App\Http\Controllers\LotteryBonusWheelController::class, 'spin'])->name('bonus-wheel.spin');

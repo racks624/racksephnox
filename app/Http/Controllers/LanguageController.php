@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -10,9 +9,10 @@ class LanguageController extends Controller
 {
     public function switch($locale)
     {
-        if (in_array($locale, ['en', 'sw', 'fr'])) {
-            Session::put('locale', $locale);
+        $available = ['en', 'sw', 'fr'];
+        if (in_array($locale, $available)) {
             App::setLocale($locale);
+            Session::put('locale', $locale);
         }
         return redirect()->back();
     }

@@ -1,23 +1,23 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="p-6">
+<div class="admin-card p-6">
     <h1 class="text-2xl font-bold text-gold mb-6">💰 Pending Deposit Requests</h1>
-
     @if($pending->count())
         <div class="overflow-x-auto">
-            <table class="min-w-full bg-cosmic-deep border border-gold/30 rounded-lg">
-                <thead class="bg-gold/10">
-                    <tr>
+            <table class="min-w-full">
+                <thead class="bg-gold/10 border-b border-gold/30">
+                    <tr class="text-gold-400">
                         <th class="px-4 py-2">User</th>
                         <th class="px-4 py-2">Amount</th>
                         <th class="px-4 py-2">Transaction Ref</th>
-                        <th class="px-4 py-2">Phone Number</th>
+                        <th class="px-4 py-2">Phone</th>
                         <th class="px-4 py-2">Actions</th>
-                     </thead>
+                     </tr>
+                </thead>
                 <tbody>
                     @foreach($pending as $deposit)
-                    <tr class="border-t border-gold/20">
+                    <tr class="border-b border-gold/20">
                         <td class="px-4 py-2">{{ $deposit->user->name }}<br><span class="text-xs">{{ $deposit->user->email }}</span></td>
                         <td class="px-4 py-2">KES {{ number_format($deposit->amount, 2) }}</td>
                         <td class="px-4 py-2">{{ $deposit->transaction_reference }}</td>
@@ -32,14 +32,13 @@
                     </tr>
                     @endforeach
                 </tbody>
-             </table>
+            </table>
         </div>
         {{ $pending->links() }}
     @else
-        <p class="text-ivory/50">No pending deposits.</p>
+        <p class="text-center text-ivory/50 py-8">No pending deposits.</p>
     @endif
 </div>
-
 <script>
 function promptReject(id) {
     let reason = prompt('Enter rejection reason:');

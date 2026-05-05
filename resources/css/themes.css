@@ -1,47 +1,22 @@
-/* ========================================
-   Racksephnox – Divine Cosmic Color Palette
-   Prismatic Silver-Gold
-   ======================================== */
-
-:root {
-    --silver-light: #E8E8E8;
-    --silver: #C0C0C0;
-    --gold-light: #FFD700;
-    --gold: #D4AF37;
-    --gold-dark: #B8860B;
-    --cosmic-black: #050A12;
-    --cosmic-deep: #03070F;
-    --cosmic-space: #0A1420;
-    --text-light: #F5F5F5;
-    --text-dim: #B0B0B0;
+/* Golden Spiral Theme – Lottery & Admin */
+.reel {
+    transition: all 0.2s ease;
 }
-
-:root {
-    --bg-primary: var(--cosmic-black);
-    --bg-secondary: var(--cosmic-deep);
-    --bg-tertiary: var(--cosmic-space);
-    --text-primary: var(--text-light);
-    --accent: var(--gold);
+.animate-spin-once {
+    animation: spinOnce 0.5s ease-out;
 }
-
-.dark {
-    --bg-primary: var(--cosmic-black);
-    --bg-secondary: var(--cosmic-deep);
-    --bg-tertiary: var(--cosmic-space);
-    --text-primary: var(--text-light);
-    --accent: var(--gold-light);
+@keyframes spinOnce {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-
-.cosmic {
-    --bg-primary: var(--cosmic-black);
-    --bg-secondary: var(--cosmic-deep);
-    --bg-tertiary: var(--cosmic-space);
-    --text-primary: var(--text-light);
-    --accent: var(--gold-light);
+.btn-outline-silver {
+    background: transparent;
+    border: 2px solid #D4AF37;
+    color: #D4AF37;
+    transition: all 0.3s;
 }
-
-body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    transition: background-color 0.3s, color 0.3s;
+.btn-outline-silver:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #FFD700;
+    color: #FFD700;
 }

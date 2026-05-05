@@ -22,3 +22,12 @@ if ('IntersectionObserver' in window) {
     });
     document.querySelectorAll('img[loading="lazy"]').forEach(img => imageObserver.observe(img));
 }
+
+import './lottery/canvas-slot.js';
+import './lottery/sounds.js';
+import './lottery/symbols.js';
+
+
+import './lottery/canvas-slot.js';
+import './lottery/sounds.js';
+

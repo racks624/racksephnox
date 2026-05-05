@@ -4,8 +4,29 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'resources/js/lottery/canvas-slot.js',
+                'resources/js/lottery/sounds.js',
+                'resources/js/lottery/symbols.js',
+            ],
             refresh: true,
         }),
     ],
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+            '@lottery': '/resources/js/lottery',
+        },
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    lottery: ['resources/js/lottery/canvas-slot.js', 'resources/js/lottery/sounds.js', 'resources/js/lottery/symbols.js'],
+                },
+            },
+        },
+    },
 });

@@ -1,10 +1,13 @@
 <?php
-
 namespace App\Providers;
 
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Events\InvestmentCreated;
+use App\Events\MpesaPaymentReceived;
+use App\Listeners\SendInvestmentConfirmation;
+use App\Listeners\AwardReferralBonus;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -12,16 +15,16 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        \App\Events\InvestmentCreated::class => [
-            \App\Listeners\SendInvestmentConfirmation::class,
+        InvestmentCreated::class => [
+            SendInvestmentConfirmation::class,
         ],
-        \App\Events\MpesaPaymentReceived::class => [
-            \App\Listeners\AwardReferralBonus::class,
+        MpesaPaymentReceived::class => [
+            AwardReferralBonus::class,
         ],
     ];
 
-    public function boot(): void
+    public function boot()
     {
-        parent::boot();
+        //
     }
 }

@@ -27,7 +27,7 @@
                 <thead class="border-b border-gold/30"><tr><th class="px-4 py-2">Rank</th><th>User</th><th>Total Won (KES)</th></tr></thead>
                 <tbody>
                     @foreach($topUsers as $index => $user)
-                    <tr><td class="px-4 py-2">{{ $index+1 }}</td><td>{{ $user->user->name }}</td><td class="text-green-400">{{ number_format($user->total_win, 2) }}</td></tr>
+                    <tr><td class="px-4 py-2">{{ $index+1 }}<td><td class="text-ivory">{{ $user->user->name }}</td><td class="text-green-400">{{ number_format($user->total_win, 2) }}</td></tr>
                     @endforeach
                 </tbody>
             </table>
@@ -44,7 +44,7 @@
             labels: {!! json_encode($rtpChart['labels']) !!},
             datasets: [
                 { label: 'Total Bets (KES)', data: {!! json_encode($rtpChart['bets']) !!}, borderColor: '#D4AF37', fill: false },
-                { label: 'Total Wins (KES)', data: {!! json_encode($rtpChart['wins']) !!}, borderColor: '#2ecc71', fill: false }
+                { label: 'Total Wins (KES)', data: {!! json_encode($rtpChart['wins']) !!}, borderColor: '#00FF88', fill: false }
             ]
         }
     });

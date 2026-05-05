@@ -10,7 +10,7 @@ class Machine extends Model
 {
     use HasFactory;
 
-    // Sacred Constants
+    // Sacred Constants (kept for other calculations)
     const PHI = 1.618033988749895;
     const LAMBDA = 1.272019649514069;
     const PI = 3.141592653589793;
@@ -28,9 +28,6 @@ class Machine extends Model
     const VIP_BRONZE = 1;
     const VIP_SILVER = 2;
     const VIP_GOLD = 3;
-    const VIP_PLATINUM = 4;
-    const VIP_DIAMOND = 5;
-    const VIP_SACRED = 6;
 
     protected $fillable = [
         'code', 'name', 'description', 'vip1_start_amount', 'vip2_start_amount', 'vip3_start_amount',
@@ -62,20 +59,14 @@ class Machine extends Model
     ];
 
     /**
-     * Advanced VIP amount calculation with Fibonacci scaling
+     * Get VIP amounts directly from database columns (no φ scaling)
      */
     public function getVIPAmounts(): array
     {
-        $phi = self::PHI;
-        $base = $this->vip1_start_amount;
-        
         return [
-            1 => $base,
-            2 => round($base * $phi, 2),
-            3 => round($base * pow($phi, 2), 2),
-            4 => round($base * pow($phi, 3), 2),
-            5 => round($base * pow($phi, 4), 2),
-            6 => round($base * pow($phi, 5), 2),
+            1 => $this->vip1_start_amount,
+            2 => $this->vip2_start_amount ?? $this->vip1_start_amount * self::PHI,
+            3 => $this->vip3_start_amount ?? $this->vip1_start_amount * pow(self::PHI, 2),
         ];
     }
 
@@ -110,7 +101,7 @@ class Machine extends Model
     }
 
     /**
-     * Get start amount for a given VIP level
+     * Get start amount for a given VIP level (direct from DB)
      */
     public function getStartAmountForVip($level)
     {
@@ -119,73 +110,66 @@ class Machine extends Model
     }
 
     /**
-     * Get complete VIP details with enterprise features (cached)
+     * Get complete VIP details with enterprise features
      */
     public function getVIPDetails(): array
     {
-        return Cache::remember("machine_vip_details_{$this->id}", 3600, function () {
-            $vips = [];
-            $amounts = $this->getVIPAmounts();
-            $vipNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Sacred'];
-            $vipColors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2', '#b9f2ff', '#d4af37'];
-            $vipIcons = ['fa-crown', 'fa-gem', 'fa-star', 'fa-infinity', 'fa-dragon', 'fa-sun'];
-            
-            for ($level = 1; $level <= 6; $level++) {
-                $amount = $amounts[$level] ?? $this->vip1_start_amount * pow(self::PHI, $level - 1);
-                $dailyProfit = $this->getDailyProfit($amount, $level);
-                $totalReturn = $this->getTotalReturn($amount, $level);
-                $totalProfit = $totalReturn - $amount;
-                $compoundReturn = $this->getCompoundReturn($amount, $this->duration_days);
-                
-                $vips[$level] = [
-                    'level'          => $level,
-                    'name'           => $vipNames[$level - 1],
-                    'color'          => $vipColors[$level - 1],
-                    'icon'           => $vipIcons[$level - 1],
-                    'phi_power'      => str_repeat('¹', $level),
-                    'amount'         => $amount,
-                    'daily_profit'   => $dailyProfit,
-                    'total_return'   => $totalReturn,
-                    'total_profit'   => $totalProfit,
-                    'compound_return'=> $compoundReturn,
-                    'daily_rate'     => round(($dailyProfit / $amount) * 100, 4),
-                    'roi'            => round(($totalProfit / $amount) * 100, 2),
-                    'apy'            => round((pow(1 + $dailyProfit / $amount, 365) - 1) * 100, 2),
-                    'multiplier'     => 1 + (($level - 1) * 0.05),
-                    'staking_reward' => $this->staking_reward * $level ?? 0,
-                    'referral_bonus' => $this->referral_bonus_rate + ($level * 0.5),
-                ];
-            }
-            return $vips;
-        });
-    }
+        $vips = [];
+        $amounts = $this->getVIPAmounts();
+        $vipNames = ['Bronze', 'Silver', 'Gold'];
+        $vipColors = ['#cd7f32', '#c0c0c0', '#ffd700'];
+        $vipIcons = ['fa-crown', 'fa-gem', 'fa-star'];
 
-    /**
-     * Get machine statistics (cached)
-     */
-    public function getStatistics(): array
-    {
-        return Cache::remember("machine_statistics_{$this->id}", 300, function () {
-            $activeInvestments = $this->activeInvestments();
-            return [
-                'total_investors'         => $this->investments()->distinct('user_id')->count('user_id'),
-                'total_invested'          => $this->investments()->sum('amount'),
-                'total_paid_out'          => $this->investments()->sum('total_return'),
-                'total_profit'            => $this->investments()->sum('total_return') - $this->investments()->sum('amount'),
-                'active_investments'      => $activeInvestments->count(),
-                'completion_rate'         => $this->getCompletionRate(),
-                'avg_investment'          => $activeInvestments->avg('amount') ?? 0,
-                'total_daily_payout'      => $activeInvestments->sum('daily_profit'),
-                'estimated_monthly_payout'=> $activeInvestments->sum('daily_profit') * 30,
-                'roi_percentage'          => $this->getRoiPercentage(),
-                'popular_vip_level'       => $this->getPopularVIPLevel(),
+        for ($level = 1; $level <= 3; $level++) {
+            $amount = $amounts[$level];
+            $dailyProfit = $this->getDailyProfit($amount, $level);
+            $totalReturn = $this->getTotalReturn($amount, $level);
+            $totalProfit = $totalReturn - $amount;
+            $compoundReturn = $this->getCompoundReturn($amount, $this->duration_days);
+
+            $vips[$level] = [
+                'level' => $level,
+                'name' => $vipNames[$level - 1],
+                'color' => $vipColors[$level - 1],
+                'icon' => $vipIcons[$level - 1],
+                'phi_power' => str_repeat('¹', $level),
+                'amount' => $amount,
+                'daily_profit' => $dailyProfit,
+                'total_return' => $totalReturn,
+                'total_profit' => $totalProfit,
+                'compound_return' => $compoundReturn,
+                'daily_rate' => round(($dailyProfit / $amount) * 100, 4),
+                'roi' => round(($totalProfit / $amount) * 100, 2),
+                'apy' => round((pow(1 + $dailyProfit / $amount, 365) - 1) * 100, 2),
+                'multiplier' => 1 + (($level - 1) * 0.05),
+                'staking_reward' => $this->staking_reward * $level ?? 0,
+                'referral_bonus' => $this->referral_bonus_rate + ($level * 0.5),
             ];
-        });
+        }
+        return $vips;
     }
 
     /**
-     * Get completion rate
+     * Get machine statistics
      */
+    public function getStatistics()
+    {
+        $activeInvestments = $this->activeInvestments();
+        return [
+            'total_investors' => $this->investments()->distinct('user_id')->count('user_id'),
+            'total_invested' => $this->investments()->sum('amount'),
+            'total_paid_out' => $this->investments()->sum('total_return'),
+            'total_profit' => $this->investments()->sum('total_return') - $this->investments()->sum('amount'),
+            'active_investments' => $activeInvestments->count(),
+            'completion_rate' => $this->getCompletionRate(),
+            'avg_investment' => $activeInvestments->avg('amount') ?? 0,
+            'total_daily_payout' => $activeInvestments->sum('daily_profit'),
+            'estimated_monthly_payout' => $activeInvestments->sum('daily_profit') * 30,
+            'roi_percentage' => $this->getRoiPercentage(),
+            'popular_vip_level' => $this->getPopularVIPLevel(),
+        ];
+    }
+
     private function getCompletionRate(): float
     {
         $total = $this->investments()->count();
@@ -194,9 +178,6 @@ class Machine extends Model
         return round(($completed / $total) * 100, 2);
     }
 
-    /**
-     * Get ROI percentage
-     */
     private function getRoiPercentage(): float
     {
         $totalInvested = $this->investments()->sum('amount');
@@ -205,9 +186,6 @@ class Machine extends Model
         return round(($totalProfit / $totalInvested) * 100, 2);
     }
 
-    /**
-     * Get popular VIP level
-     */
     private function getPopularVIPLevel(): int
     {
         $counts = [

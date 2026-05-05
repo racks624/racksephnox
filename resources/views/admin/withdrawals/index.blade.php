@@ -1,24 +1,24 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="p-6">
+<div class="admin-card p-6">
     <h1 class="text-2xl font-bold text-gold mb-6">💸 Pending Withdrawals</h1>
-
     @if($pending->count())
         <div class="overflow-x-auto">
-            <table class="min-w-full bg-cosmic-deep border border-gold/30 rounded-lg">
-                <thead class="bg-gold/10">
-                    <tr>
+            <table class="min-w-full">
+                <thead class="bg-gold/10 border-b border-gold/30">
+                    <tr class="text-gold-400">
                         <th class="px-4 py-2">User</th>
                         <th class="px-4 py-2">Amount</th>
                         <th class="px-4 py-2">Fee</th>
                         <th class="px-4 py-2">Net</th>
                         <th class="px-4 py-2">Phone</th>
                         <th class="px-4 py-2">Actions</th>
-                     </thead>
+                     </tr>
+                </thead>
                 <tbody>
                     @foreach($pending as $wd)
-                    <tr class="border-t border-gold/20">
+                    <tr class="border-b border-gold/20">
                         <td class="px-4 py-2">{{ $wd->user->name }}<br><span class="text-xs">{{ $wd->user->email }}</span></td>
                         <td class="px-4 py-2">KES {{ number_format($wd->amount, 2) }}</td>
                         <td class="px-4 py-2">KES {{ number_format($wd->fee, 2) }}</td>
@@ -38,34 +38,33 @@
                     </tr>
                     @endforeach
                 </tbody>
-             </table>
+            </table>
         </div>
         {{ $pending->links() }}
     @else
-        <p class="text-ivory/50">No pending withdrawals.</p>
+        <p class="text-center text-ivory/50 py-8">No pending withdrawals.</p>
     @endif
 </div>
-
 <script>
-function promptReject(id) {
-    let reason = prompt('Enter rejection reason:');
-    if (reason) {
-        let form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/withdrawals/' + id + '/reject';
-        let csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = '_token';
-        csrf.value = '{{ csrf_token() }}';
-        let reasonInput = document.createElement('input');
-        reasonInput.type = 'hidden';
-        reasonInput.name = 'reason';
-        reasonInput.value = reason;
-        form.appendChild(csrf);
-        form.appendChild(reasonInput);
-        document.body.appendChild(form);
-        form.submit();
+    function promptReject(id) {
+        let reason = prompt('Enter rejection reason:');
+        if (reason) {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/withdrawals/' + id + '/reject';
+            let csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+            let reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'reason';
+            reasonInput.value = reason;
+            form.appendChild(csrf);
+            form.appendChild(reasonInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
-}
 </script>
 @endsection

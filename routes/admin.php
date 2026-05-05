@@ -8,19 +8,12 @@ use App\Http\Controllers\Admin\DepositVerificationController;
 use App\Http\Controllers\Admin\WithdrawalController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\LotteryController;
+use App\Http\Controllers\Admin\LotteryController as AdminLotteryController;
 use App\Http\Controllers\Admin\LotteryAnalyticsController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes
-|--------------------------------------------------------------------------
-| All routes here are prefixed with /admin and protected by 'auth' and 'admin' middleware.
-|--------------------------------------------------------------------------
-*/
-
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/stats', [DashboardController::class, 'stats'])->name('stats');
@@ -28,11 +21,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Users
     Route::resource('users', UserController::class);
     Route::post('users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
-    Route::post('users/{user}/toggle-vip', [UserController::class, 'toggleVip'])->name('users.toggle-vip');
-    Route::post('users/{user}/toggle-promo', [UserController::class, 'togglePromo'])->name('users.toggle-promo');
     Route::post('users/export', [UserController::class, 'export'])->name('users.export');
 
-    // Investment Plans
+    // Investment Plans (machines)
     Route::resource('plans', InvestmentPlanController::class);
     Route::post('plans/export', [InvestmentPlanController::class, 'export'])->name('plans.export');
 
@@ -56,11 +47,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Reports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('reports/export', [ReportController::class, 'export'])->name('reports.export');
-    Route::get('reports/export/users', [ReportController::class, 'exportUsers'])->name('reports.export.users');
-    Route::get('reports/export/transactions', [ReportController::class, 'exportTransactions'])->name('reports.export.transactions');
-    Route::get('reports/export/investments', [ReportController::class, 'exportInvestments'])->name('reports.export.investments');
-    Route::get('reports/export/trading', [ReportController::class, 'exportTrading'])->name('reports.export.trading');
-    Route::get('reports/export/pdf', [ReportController::class, 'exportPdfReport'])->name('reports.export.pdf');
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -68,14 +54,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('settings/cache-clear', [SettingsController::class, 'clearCache'])->name('settings.cache-clear');
     Route::post('settings/maintenance', [SettingsController::class, 'toggleMaintenance'])->name('settings.maintenance');
 
-    // Lottery Management
+    // Lottery Admin
     Route::prefix('lottery')->name('lottery.')->group(function () {
-        Route::get('/', [LotteryController::class, 'index'])->name('index');
-        Route::get('/game/{game}/edit', [LotteryController::class, 'editGame'])->name('edit-game');
-        Route::put('/game/{game}', [LotteryController::class, 'updateGame'])->name('update-game');
-        Route::get('/symbol/{symbol}/edit', [LotteryController::class, 'editSymbol'])->name('edit-symbol');
-        Route::put('/symbol/{symbol}', [LotteryController::class, 'updateSymbol'])->name('update-symbol');
-        Route::get('/stats', [LotteryController::class, 'stats'])->name('stats');
+        Route::get('/', [AdminLotteryController::class, 'index'])->name('index');
+        Route::get('/symbols', [AdminLotteryController::class, 'symbols'])->name('symbols');
+        Route::post('/symbols', [AdminLotteryController::class, 'updateSymbols'])->name('symbols.update');
         Route::get('/analytics', [LotteryAnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/export', [AdminLotteryController::class, 'exportConfig'])->name('export');
+        Route::post('/import', [AdminLotteryController::class, 'importConfig'])->name('import');
+        Route::get('/rtp-simulate', [AdminLotteryController::class, 'rtpSimulate'])->name('rtp-simulate');
     });
 });

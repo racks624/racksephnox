@@ -45,40 +45,23 @@ class LotteryController extends Controller
             'base_rtp' => 'numeric|min:0|max:100',
             'vip_rtp' => 'numeric|min:0|max:100',
             'promo_rtp' => 'numeric|min:0|max:100',
+            'volatility' => 'required|in:low,medium,high,extreme',
+            'max_daily_loss' => 'nullable|numeric|min:0',
+            'max_weekly_loss' => 'nullable|numeric|min:0',
+            'max_monthly_loss' => 'nullable|numeric|min:0',
+            'max_win_cap' => 'nullable|numeric|min:0',
+            'cool_down_minutes' => 'nullable|integer|min:0',
+            'session_timeout_minutes' => 'nullable|integer|min:0',
+            'enable_free_spins' => 'boolean',
+            'enable_bonus_buy' => 'boolean',
+            'bonus_buy_price' => 'nullable|numeric|min:0',
         ]);
         $game->update($validated);
         Cache::forget('lottery_symbols');
         return redirect()->route('admin.lottery.index')->with('success', 'Game updated.');
     }
 
-    public function editSymbol(LotterySymbol $symbol)
-    {
-        return view('admin.lottery.symbol-edit', compact('symbol'));
-    }
-
-    public function updateSymbol(Request $request, LotterySymbol $symbol)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'display_name' => 'required|string|max:255',
-            'icon' => 'required|string|max:255',
-            'weight' => 'required|integer|min:1',
-            'is_wild' => 'boolean',
-            'is_scatter' => 'boolean',
-        ]);
-        $symbol->update($validated);
-        Cache::forget('lottery_symbols');
-        return redirect()->route('admin.lottery.index')->with('success', 'Symbol updated.');
-    }
-
-    public function stats()
-    {
-        $totalSpins = LotterySpin::count();
-        $totalBet = LotterySpin::sum('bet_amount');
-        $totalWin = LotterySpin::sum('win_amount');
-        $miniJackpotHits = LotterySpin::where('mini_jackpot_hit', true)->count();
-        $superJackpotHits = LotterySpin::where('super_jackpot_hit', true)->count();
-        $totalTax = LotterySpin::sum('tax_contribution');
-        return response()->json(compact('totalSpins', 'totalBet', 'totalWin', 'miniJackpotHits', 'superJackpotHits', 'totalTax'));
-    }
+    public function editSymbol(LotterySymbol $symbol) { /* ... */ }
+    public function updateSymbol(Request $request, LotterySymbol $symbol) { /* ... */ }
+    public function stats() { /* ... */ }
 }

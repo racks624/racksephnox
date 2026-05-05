@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Services;
-
 use App\Models\LotteryMission;
 use App\Models\LotteryUserMission;
 use App\Models\User;
-
 class LotteryMissionService
 {
     public function track(User $user, string $type, int $increment = 1): void
@@ -28,39 +25,30 @@ class LotteryMissionService
             }
         }
     }
-
     protected function reward(User $user, LotteryMission $mission): void
     {
-        $wallet = $user->wallet;
         if ($mission->reward_type === 'free_spin') {
             $user->free_spins_available = ($user->free_spins_available ?? 0) + $mission->reward_free_spins;
             $user->save();
         } elseif ($mission->reward_type === 'bonus_kes') {
-            $wallet->increment('balance', $mission->reward_amount);
+            $user->wallet->increment('balance', $mission->reward_amount);
             $user->transactions()->create([
                 'type' => 'mission_reward',
                 'amount' => $mission->reward_amount,
                 'status' => 'completed',
                 'description' => "Mission reward: {$mission->name}",
-                'balance_after' => $wallet->balance,
+                'balance_after' => $user->wallet->balance,
                 'user_id' => $user->id,
-                'wallet_id' => $wallet->id,
+                'wallet_id' => $user->wallet->id,
             ]);
         }
-        $user->notifications()->create([
-            'type' => 'mission_completed',
-            'data' => ['message' => "🎉 Mission '{$mission->name}' completed! Reward claimed."],
-        ]);
     }
-
     public function getTodayMissions(User $user): array
     {
         $today = now()->toDateString();
         $allMissions = LotteryMission::all();
         $userMissions = LotteryUserMission::where('user_id', $user->id)
-            ->where('date', $today)
-            ->get()
-            ->keyBy('mission_id');
+            ->where('date', $today)->get()->keyBy('mission_id');
         $result = [];
         foreach ($allMissions as $mission) {
             $um = $userMissions[$mission->id] ?? null;

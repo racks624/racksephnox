@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LotterySpin extends Model
 {
+    protected $table = 'lottery_spins';
+
     protected $fillable = [
         'user_id', 'lottery_game_id', 'bet_amount', 'win_amount', 'result', 'status',
         'last_free_spin_at', 'free_spin_used', 'free_spins_remaining',
@@ -13,6 +15,7 @@ class LotterySpin extends Model
         'mini_jackpot_hit', 'super_jackpot_hit', 'free_spin_triggered', 'tax_contribution',
         'client_seed', 'server_seed', 'server_seed_hashed', 'nonce', 'verified'
     ];
+
     protected $casts = [
         'result' => 'array',
         'bet_amount' => 'decimal:2',

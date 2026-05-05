@@ -8,7 +8,10 @@ use App\Models\LotterySpin;
 use App\Models\LotteryRevenueTarget;
 use App\Models\User;
 use App\Events\JackpotUpdated;
+use App\Events\BigWinEvent;
 use App\Notifications\JackpotWinNotification;
+use App\Services\Lottery\AchievementService;
+use App\Services\Lottery\RngService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,27 +19,33 @@ use Illuminate\Support\Str;
 class LotteryService
 {
     protected $game;
+    protected $rng;
+    protected $achievements;
     protected $houseEdge = 0.05;
 
     public function __construct(LotteryGame $game)
     {
         $this->game = $game;
+        $this->rng = new RngService();
+        $this->achievements = new AchievementService();
+    }
+
+    // Pre‑spin validation (cooldown, session, loss limits)
+    public function validateSpin(User $user, float $betAmount, bool $isFreeSpin = false): void
+    {
+        if (!$isFreeSpin) {
+            if ($betAmount < $this->game->min_bet) throw new \Exception('Bet below minimum.');
+            if ($betAmount > $this->game->max_bet) throw new \Exception('Bet above maximum.');
+            if ($this->game->isInCooldown($user)) throw new \Exception('Please wait before spinning again.');
+            if ($this->game->isSessionExpired($user)) throw new \Exception('Your session expired. Please reload the page.');
+            if (!$this->game->isWithinLimits($user, $betAmount)) throw new \Exception('You have reached your loss limit for today/week/month.');
+        }
     }
 
     protected function getRandomSymbol(User $user, int $spinCount): LotterySymbol
     {
-        $symbols = Cache::remember('lottery_symbols', 3600, fn() => LotterySymbol::all());
-        $totalWeight = $symbols->sum('weight');
         $seed = (int) ($user->id * $spinCount + $this->game->id * 1000);
-        srand($seed);
-        $rand = rand(1, $totalWeight);
-        srand();
-        $cumulative = 0;
-        foreach ($symbols as $symbol) {
-            $cumulative += $symbol->weight;
-            if ($rand <= $cumulative) return $symbol;
-        }
-        return $symbols->first();
+        return $this->rng->getWeightedRandomSymbol($seed);
     }
 
     public function spin(User $user, int $spinCount): array
@@ -48,10 +57,14 @@ class LotteryService
         ];
     }
 
-    protected function calculateWin(array $symbols, float $betAmount): array
+    protected function calculateWin(array $symbols, float $betAmount, User $user): array
     {
         $counts = [];
-        foreach ($symbols as $sym) $counts[$sym->id] = ($counts[$sym->id] ?? 0) + 1;
+        $multiplier = 1;
+        foreach ($symbols as $sym) {
+            $counts[$sym->id] = ($counts[$sym->id] ?? 0) + 1;
+            if ($sym->is_wild && $sym->multiplier > 1) $multiplier = $sym->multiplier;
+        }
         $winMultiplier = 0;
         $miniJackpot = false;
         $superJackpot = false;
@@ -65,6 +78,7 @@ class LotteryService
                     ->first();
                 if ($payout) {
                     $mult = (float) $payout->pivot->payout_multiplier;
+                    $mult = $this->game->adjustPayoutByVolatility($mult);
                     $winMultiplier = max($winMultiplier, $mult);
                     $symbol = LotterySymbol::find($symbolId);
                     if ($symbol && $symbol->name === 'golden_flower') $miniJackpot = true;
@@ -86,31 +100,23 @@ class LotteryService
         $scatter = LotterySymbol::where('name', 'golden_flower')->first();
         if ($scatter && ($counts[$scatter->id] ?? 0) >= 2) $freeSpinTrigger = true;
 
-        $winAmount = $superJackpot ? $this->game->progressive_jackpot : ($miniJackpot ? 5000 : $winMultiplier * $betAmount);
+        $winAmount = $superJackpot ? $this->game->progressive_jackpot : ($miniJackpot ? 5000 : $winMultiplier * $betAmount * $multiplier);
+        $winAmount = $this->game->applyWinCap($winAmount);
+        $winAmount = $this->game->adjustWithRtp($winAmount, $betAmount, $user);
+
         return [
             'win_amount' => $winAmount,
-            'multiplier' => $winMultiplier,
+            'multiplier' => $winMultiplier * $multiplier,
             'mini_jackpot' => $miniJackpot,
             'super_jackpot' => $superJackpot,
             'free_spin_trigger' => $freeSpinTrigger,
         ];
     }
 
-    protected function updateRevenueTarget(float $tax): void
-    {
-        $target = LotteryRevenueTarget::where('is_active', true)->first();
-        if ($target) {
-            $target->current_revenue += $tax;
-            $target->save();
-        }
-    }
-
     public function play(User $user, float $betAmount, bool $isFreeSpin = false, ?string $clientSeed = null): array
     {
-        if (!$isFreeSpin) {
-            if ($betAmount < $this->game->min_bet) throw new \Exception('Bet below minimum.');
-            if ($betAmount > $this->game->max_bet) throw new \Exception('Bet above maximum.');
-        }
+        $this->validateSpin($user, $betAmount, $isFreeSpin);
+
         $wallet = $user->wallet;
         if (!$isFreeSpin && (!$wallet || $wallet->balance < $betAmount)) {
             throw new \Exception('Insufficient balance.');
@@ -123,7 +129,7 @@ class LotteryService
         $serverSeedHashed = hash('sha256', $serverSeed);
 
         $symbols = $this->spin($user, $spinCount);
-        $result = $this->calculateWin($symbols, $betAmount);
+        $result = $this->calculateWin($symbols, $betAmount, $user);
         $winAmount = $result['win_amount'];
         $miniJackpot = $result['mini_jackpot'];
         $superJackpot = $result['super_jackpot'];
@@ -143,29 +149,23 @@ class LotteryService
                     'wallet_id' => $user->wallet->id,
                 ]);
                 $this->updateRevenueTarget($tax);
+                $this->game->contributeToJackpot($betAmount);
             }
             if ($winAmount > 0) {
                 $user->wallet->increment('balance', $winAmount);
                 if ($superJackpot) {
-                    $this->game->decrement('progressive_jackpot', $winAmount);
-                    if ($this->game->progressive_jackpot < 1000) $this->game->progressive_jackpot = 1000;
-                    $this->game->save();
-                    $type = 'lottery_super_jackpot';
-                    $desc = '🌟 SUPER JACKPOT! 🌟';
                     $user->notify(new JackpotWinNotification($winAmount, 'super'));
+                    broadcast(new JackpotUpdated($this->game->progressive_jackpot));
+                    broadcast(new BigWinEvent($user->name, $winAmount, array_map(fn($s) => $s->name, $symbols)));
                 } elseif ($miniJackpot) {
-                    $type = 'lottery_mini_jackpot';
-                    $desc = '🌸 MINI JACKPOT! 🌸';
                     $user->notify(new JackpotWinNotification($winAmount, 'mini'));
-                } else {
-                    $type = 'lottery_win';
-                    $desc = 'Cosmic slot win';
+                    broadcast(new BigWinEvent($user->name, $winAmount, array_map(fn($s) => $s->name, $symbols)));
                 }
                 $user->transactions()->create([
-                    'type' => $type,
+                    'type' => $superJackpot ? 'lottery_super_jackpot' : ($miniJackpot ? 'lottery_mini_jackpot' : 'lottery_win'),
                     'amount' => $winAmount,
                     'status' => 'completed',
-                    'description' => $desc,
+                    'description' => $superJackpot ? '🌟 SUPER JACKPOT! 🌟' : ($miniJackpot ? '🌸 MINI JACKPOT! 🌸' : 'Cosmic slot win'),
                     'balance_after' => $user->wallet->balance,
                     'user_id' => $user->id,
                     'wallet_id' => $user->wallet->id,
@@ -196,12 +196,12 @@ class LotteryService
                 'nonce' => $nonce,
                 'verified' => false,
             ]);
-            if (!$isFreeSpin && $winAmount == 0 && !$miniJackpot && !$superJackpot) {
-                $this->game->increment('progressive_jackpot', $betAmount * ($this->game->jackpot_contribution_rate / 100));
-                $this->game->save();
-                event(new JackpotUpdated($this->game->progressive_jackpot));
-            }
+            $this->achievements->checkAndAward($user, 'spins', LotterySpin::where('user_id', $user->id)->count());
+            if ($winAmount > 0) $this->achievements->checkAndAward($user, 'wins', LotterySpin::where('user_id', $user->id)->where('win_amount', '>', 0)->count());
+            if ($superJackpot) $this->achievements->checkAndAward($user, 'jackpots', 1);
         });
+
+        broadcast(new JackpotUpdated($this->game->progressive_jackpot));
         return [
             'symbols' => $symbols,
             'win_amount' => $winAmount,
@@ -217,8 +217,18 @@ class LotteryService
         ];
     }
 
+    protected function updateRevenueTarget(float $tax): void
+    {
+        $target = LotteryRevenueTarget::where('is_active', true)->first();
+        if ($target) {
+            $target->current_revenue += $tax;
+            $target->save();
+        }
+    }
+
     public function canUseFreeSpin(User $user): bool
     {
+        if (!$this->game->enable_free_spins) return false;
         $lastFreeSpin = LotterySpin::where('user_id', $user->id)->where('free_spin_used', true)->latest('last_free_spin_at')->first();
         return !$lastFreeSpin || $lastFreeSpin->last_free_spin_at->lt(now()->subDay());
     }
@@ -228,33 +238,27 @@ class LotteryService
         $lastFreeSpin = LotterySpin::where('user_id', $user->id)->where('free_spin_used', true)->latest('last_free_spin_at')->first();
         if (!$lastFreeSpin) return 0;
         $nextAvailable = $lastFreeSpin->last_free_spin_at->addDay();
-        $hours = max(0, now()->diffInHours($nextAvailable, false));
-        return ceil($hours);
+        return max(0, ceil(now()->diffInHours($nextAvailable, false)));
     }
 
     public function verifySpin(LotterySpin $spin, string $serverSeedPlain): array
     {
         if ($spin->verified) return ['verified' => true, 'message' => 'Already verified.'];
-        $computedHash = hash('sha256', $serverSeedPlain);
-        if ($computedHash !== $spin->server_seed_hashed) return ['verified' => false, 'message' => 'Server seed hash mismatch.'];
+        if (hash('sha256', $serverSeedPlain) !== $spin->server_seed_hashed) {
+            return ['verified' => false, 'message' => 'Server seed hash mismatch.'];
+        }
         $user = $spin->user;
         $spinCount = LotterySpin::where('user_id', $user->id)->where('id', '<', $spin->id)->count();
-        srand((int) ($user->id * $spinCount + $spin->lottery_game_id * 1000));
-        $totalWeight = LotterySymbol::sum('weight');
-        $recalculatedNames = [];
+        $seed = (int) ($user->id * $spinCount + $spin->lottery_game_id * 1000);
+        $this->rng->seed($seed);
+        $recalculated = [];
         for ($i = 0; $i < 3; $i++) {
-            $rand = rand(1, $totalWeight);
-            $cum = 0;
-            foreach (LotterySymbol::all() as $sym) {
-                $cum += $sym->weight;
-                if ($rand <= $cum) {
-                    $recalculatedNames[] = $sym->name;
-                    break;
-                }
-            }
+            $recalculated[] = $this->rng->getWeightedRandomSymbol($seed + $i)->name;
         }
-        srand();
-        if (($spin->result['names'] ?? []) !== $recalculatedNames) return ['verified' => false, 'message' => 'Result mismatch.'];
+        $this->rng->reset();
+        if (($spin->result['names'] ?? []) !== $recalculated) {
+            return ['verified' => false, 'message' => 'Result mismatch.'];
+        }
         $spin->verified = true;
         $spin->server_seed = $serverSeedPlain;
         $spin->save();
