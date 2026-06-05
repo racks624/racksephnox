@@ -18,3 +18,6 @@ racksephnox-schedule.conf
 reason
 status
 tests_backup/
+*.backup
+*.bak
+database/migrations_backup_*/
