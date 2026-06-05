@@ -3,23 +3,27 @@
 <div class="py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold golden-title mb-6">📊 My Investments</h1>
+
+        <!-- Stats (legacy only – no changes) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="card-golden p-4 text-center"><p class="text-ivory/60">Total Invested</p><p class="text-2xl font-bold text-gold">KES {{ number_format($totalInvested, 2) }}</p></div>
             <div class="card-golden p-4 text-center"><p class="text-ivory/60">Total Profit</p><p class="text-2xl font-bold text-green-400">KES {{ number_format($totalProfit, 2) }}</p></div>
             <div class="card-golden p-4 text-center"><p class="text-ivory/60">Active Investments</p><p class="text-2xl font-bold text-gold">{{ $activeCount }}</p></div>
         </div>
+
+        <!-- Legacy Investments Table (unchanged) -->
         @if($machineInvestments->count())
-        <div class="card-golden p-6">
+        <div class="card-golden p-6 mb-8">
+            <h2 class="text-xl font-bold text-gold mb-4">📜 Legacy Investment Plans</h2>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="border-b border-gold/30">
-                        <tr><th class="px-4 py-3 text-left">Machine</th><th>VIP</th><th>Amount</th><th>Daily Profit</th><th>Profit Earned</th><th>Status</th><th>End Date</th><th></th></tr>
+                        <tr><th class="px-4 py-3 text-left">Plan</th><th>Amount</th><th>Daily Profit</th><th>Profit Earned</th><th>Status</th><th>End Date</th><th></th></tr>
                     </thead>
                     <tbody class="divide-y divide-gold/20">
                         @foreach($machineInvestments as $inv)
                         <tr>
-                            <td class="px-4 py-3">{{ $inv->machine->name }}</td>
-                            <td class="px-4 py-3">VIP {{ $inv->vip_level }}</td>
+                            <td class="px-4 py-3">{{ $inv->plan->name }}</td>
                             <td class="px-4 py-3">KES {{ number_format($inv->amount, 2) }}</td>
                             <td class="px-4 py-3 text-green-400">+KES {{ number_format($inv->daily_profit, 2) }}</td>
                             <td class="px-4 py-3">KES {{ number_format($inv->profit_credited, 2) }}</td>
@@ -42,16 +46,76 @@
             {{ $machineInvestments->links() }}
         </div>
         @else
-        <div class="card-golden p-6 text-center"><p class="text-ivory/50">No investments yet. <a href="{{ route('machines.index') }}" class="text-gold-400">Explore Machines →</a></p></div>
+        <div class="card-golden p-6 mb-8 text-center"><p class="text-ivory/50">No legacy investments yet.</p></div>
         @endif
+
+        <!-- RX Machine Investments – loaded via AJAX (no backend changes) -->
+        <div class="card-golden p-6">
+            <h2 class="text-xl font-bold text-gold mb-4">🤖 RX Machine Investments</h2>
+            <div id="rx-investments-container">
+                <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-gold text-2xl"></i> Loading your RX machines...</div>
+            </div>
+        </div>
     </div>
 </div>
+
 <script>
+// Legacy early withdrawal (unchanged)
 function earlyWithdraw(investmentId) {
     if(confirm('⚠️ Early withdrawal will incur a penalty (20%). Proceed?')) {
-        fetch(`/machines/${investmentId}/early-withdraw`, { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' } })
-            .then(res => res.json()).then(data => { alert(data.message); if(data.success) location.reload(); })
-            .catch(err => alert('Error: '+err.message));
+        fetch(`/machines/${investmentId}/early-withdraw`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => { alert(data.message); if(data.success) location.reload(); })
+        .catch(err => alert('Error: '+err.message));
+    }
+}
+
+// Fetch RX machine investments from the existing API endpoint
+fetch('{{ url("/machines/my-investments") }}', {
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+})
+.then(res => res.json())
+.then(data => {
+    const container = document.getElementById('rx-investments-container');
+    if (!data.success || data.data.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-ivory/50">No RX machine investments yet. <a href="{{ route("machines.index") }}" class="text-gold-400">Explore RX Machines →</a></div>';
+        return;
+    }
+    let html = `<div class="overflow-x-auto"><table class="w-full"><thead class="border-b border-gold/30"><tr>
+        <th class="px-4 py-3 text-left">Machine</th><th>VIP</th><th>Amount</th><th>Daily Profit</th><th>Profit Earned</th><th>Status</th><th>End Date</th><th></th>
+    </tr></thead><tbody class="divide-y divide-gold/20">`;
+    data.data.forEach(inv => {
+        html += `<tr>
+            <td class="px-4 py-3">${inv.machine_name}</td>
+            <td class="px-4 py-3">VIP ${inv.vip_level}</td>
+            <td class="px-4 py-3">KES ${Number(inv.amount).toLocaleString()}</td>
+            <td class="px-4 py-3 text-green-400">+KES ${Number(inv.daily_profit).toLocaleString()}</td>
+            <td class="px-4 py-3">KES ${Number(inv.profit_credited).toLocaleString()}</td>
+            <td class="px-4 py-3">${inv.status === 'active' ? '<span class="text-green-400">● Active</span>' : (inv.status === 'completed' ? '<span class="text-gold">✓ Completed</span>' : '<span class="text-red-400">✗ Cancelled</span>')}</td>
+            <td class="px-4 py-3">${new Date(inv.end_date).toLocaleDateString()}</td>
+            <td class="px-4 py-3">${inv.status === 'active' ? `<button onclick="earlyWithdrawMachine(${inv.id})" class="text-red-400 text-sm hover:text-red-300">Withdraw</button>` : ''}</td>
+        </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+})
+.catch(err => {
+    document.getElementById('rx-investments-container').innerHTML = '<div class="text-center py-8 text-red-400">Failed to load RX investments. Please refresh.</div>';
+});
+
+// Separate function for machine early withdrawal (same endpoint)
+function earlyWithdrawMachine(investmentId) {
+    if(confirm('⚠️ Early withdrawal will incur a penalty (20%). Proceed?')) {
+        fetch(`/machines/${investmentId}/early-withdraw`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => { alert(data.message); if(data.success) location.reload(); })
+        .catch(err => alert('Error: '+err.message));
     }
 }
 </script>

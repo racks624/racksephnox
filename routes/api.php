@@ -138,34 +138,6 @@ Route::prefix('v1')->group(function () {
             Route::get('/recent-wins', [ApiLotteryController::class, 'recentWins']);
             Route::get('/my-stats', [ApiLotteryController::class, 'myStats']);
         });
-
-        // Dashboard stats (simple)
-        Route::get('/dashboard/stats', function (\Illuminate\Http\Request $request) {
-            $user = $request->user();
-            return response()->json([
-                'wallet_balance' => $user->wallet?->balance ?? 0,
-                'total_invested' => $user->machineInvestments()->sum('amount'),
-                'active_investments' => $user->machineInvestments()->where('status', 'active')->count(),
-                'total_profit' => $user->machineInvestments()->sum('profit_credited'),
-                'total_referrals' => $user->referrals()->count(),
-                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
-            ]);
-        });
-
-        // Referral link shortcut
-        Route::get('/referral-stats', function (\Illuminate\Http\Request $request) {
-            $user = $request->user();
-            return response()->json([
-                'total_referrals' => $user->referrals()->count(),
-                'total_bonus' => $user->transactions()->where('type', 'referral_bonus')->sum('amount'),
-                'referral_link' => url('/register?ref=' . $user->referral_code),
-            ]);
-        });
-
-        // Crypto prices shortcut
-        Route::get('/crypto-prices', function () {
-            return response()->json(\App\Models\CryptoPrice::latest()->take(5)->get());
-        });
     });
 });
 
@@ -213,38 +185,4 @@ Route::get('/v1/info', function () {
             'lottery' => '/v1/lottery/*',
         ],
     ]);
-});
-
-    // Lottery API (real‑time data)
-    Route::prefix('lottery')->group(function () {
-        Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
-        Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
-        Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
-        Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
-        Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
-    });
-
-    // Lottery API (real‑time data)
-    Route::prefix('lottery')->group(function () {
-        Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
-        Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
-        Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
-        Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
-        Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
-    });
-
-// Lottery API (real‑time data)
-Route::middleware('auth:sanctum')->prefix('v1/lottery')->group(function () {
-    Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
-    Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
-    Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
-    Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
-    Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
-});
-Route::middleware('auth:sanctum')->prefix('v1/lottery')->group(function () {
-    Route::get('/jackpot', [App\Http\Controllers\Api\LotteryController::class, 'jackpot']);
-    Route::get('/leaderboard', [App\Http\Controllers\Api\LotteryController::class, 'leaderboard']);
-    Route::get('/achievements', [App\Http\Controllers\Api\LotteryController::class, 'achievements']);
-    Route::get('/recent-wins', [App\Http\Controllers\Api\LotteryController::class, 'recentWins']);
-    Route::get('/my-stats', [App\Http\Controllers\Api\LotteryController::class, 'myStats']);
 });

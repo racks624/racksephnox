@@ -8,14 +8,23 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TradingEngine
 {
     protected $orderBook = [];
     protected $pair;
 
-    public function __construct(TradingPair $pair = null)
+    public function __construct(?TradingPair $pair = null)
     {
+        // Check if required tables exist before any database operations
+        if (!$this->tablesExist()) {
+            // Tables don't exist yet (during migrations), create a dummy instance
+            $this->pair = $pair ?? new TradingPair();
+            $this->orderBook = ['bids' => collect(), 'asks' => collect()];
+            return;
+        }
+
         if (!$pair) {
             $pair = TradingPair::firstOrCreate(
                 ['symbol' => 'BTCUSDT'],
@@ -26,8 +35,18 @@ class TradingEngine
         $this->loadOrderBook();
     }
 
+    protected function tablesExist(): bool
+    {
+        return Schema::hasTable('trade_orders') && Schema::hasTable('trading_pairs');
+    }
+
     protected function loadOrderBook()
     {
+        if (!$this->tablesExist()) {
+            $this->orderBook = ['bids' => collect(), 'asks' => collect()];
+            return;
+        }
+
         $this->orderBook = Cache::remember("orderbook_{$this->pair->id}", 5, function () {
             $buyOrders = TradeOrder::where('pair_id', $this->pair->id)
                 ->where('side', 'buy')->whereIn('status', ['pending', 'partial'])
@@ -41,6 +60,10 @@ class TradingEngine
 
     public function getMarketPrice()
     {
+        if (!$this->tablesExist()) {
+            return 8500000; // Default price when tables don't exist
+        }
+
         return Cache::remember("market_price_{$this->pair->symbol}", 10, function () {
             $lastTrade = TradeOrder::where('pair_id', $this->pair->id)
                 ->where('status', 'completed')->latest()->first();
@@ -50,6 +73,10 @@ class TradingEngine
 
     public function placeOrder(User $user, $side, $orderType, $amount, $price = null, $stopPrice = null, $tp = null, $sl = null, $tif = 'GTC')
     {
+        if (!$this->tablesExist()) {
+            throw new \Exception('Trading system is initializing. Please try again in a moment.');
+        }
+
         $marketPrice = $this->getMarketPrice();
         $totalKes = ($orderType === 'market') ? $amount * $marketPrice : $amount * $price;
 
@@ -87,6 +114,8 @@ class TradingEngine
 
     public function executeMarketOrder(TradeOrder $order)
     {
+        if (!$this->tablesExist()) return;
+
         $price = $this->getMarketPrice();
         $totalKes = $order->amount_btc * $price;
         DB::transaction(function () use ($order, $totalKes, $price) {
@@ -109,6 +138,8 @@ class TradingEngine
 
     public function matchOrder(TradeOrder $order)
     {
+        if (!$this->tablesExist()) return;
+
         $opposite = $order->side === 'buy' ? 'sell' : 'buy';
         $matchingOrders = TradeOrder::where('pair_id', $this->pair->id)
             ->where('side', $opposite)
@@ -135,6 +166,8 @@ class TradingEngine
 
     protected function executeTrade(TradeOrder $buyOrder, TradeOrder $sellOrder, $amount, $price)
     {
+        if (!$this->tablesExist()) return;
+
         $totalKes = $amount * $price;
         DB::transaction(function () use ($buyOrder, $sellOrder, $amount, $totalKes, $price) {
             $buyOrder->increment('filled_amount', $amount);
@@ -167,6 +200,8 @@ class TradingEngine
 
     protected function checkStopOrders(TradeOrder $triggerOrder)
     {
+        if (!$this->tablesExist()) return;
+
         $price = $triggerOrder->price_per_btc;
         $stopOrders = TradeOrder::where('pair_id', $this->pair->id)
             ->where('status', 'pending')
@@ -183,6 +218,10 @@ class TradingEngine
 
     public function getOrderBook()
     {
+        if (!$this->tablesExist()) {
+            return ['bids' => collect(), 'asks' => collect()];
+        }
+
         $bids = TradeOrder::where('pair_id', $this->pair->id)
             ->where('side', 'buy')
             ->whereIn('status', ['pending', 'partial'])
@@ -204,6 +243,10 @@ class TradingEngine
 
     public function getBtcBalance($userId)
     {
+        if (!$this->tablesExist()) {
+            return 0;
+        }
+
         $bought = TradeOrder::where('user_id', $userId)
             ->where('side', 'buy')
             ->where('status', 'completed')
@@ -217,6 +260,8 @@ class TradingEngine
 
     public function trackAndAwardBonus($user)
     {
+        if (!$this->tablesExist()) return null;
+
         $tracker = \App\Models\TradingBonusTracker::firstOrCreate(['user_id' => $user->id]);
         $lastTrade = TradeOrder::where('user_id', $user->id)
             ->where('status', 'completed')
@@ -253,6 +298,8 @@ class TradingEngine
 
     public function executeCopyTrades(TradeOrder $originalOrder)
     {
+        if (!$this->tablesExist()) return;
+
         if ($originalOrder->status !== 'completed') return;
         $followers = \App\Models\FollowedTrader::where('trader_id', $originalOrder->user_id)
             ->where('auto_copy', true)

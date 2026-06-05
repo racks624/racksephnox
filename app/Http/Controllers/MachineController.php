@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Log;
 
 class MachineController extends Controller
 {
-    /**
-     * Display all active RX machines (including RX0 Origin)
-     */
     public function index()
     {
         $machines = Cache::remember('machines_active', 300, function () {
@@ -42,9 +39,6 @@ class MachineController extends Controller
         ));
     }
 
-    /**
-     * Show a single machine details (RX0–RX6)
-     */
     public function show($code)
     {
         $machine = Machine::where('code', $code)->where('is_active', true)->firstOrFail();
@@ -77,54 +71,35 @@ class MachineController extends Controller
         ));
     }
 
-    /**
-     * Invest in a machine (RX0–RX6, any VIP level 1–3)
-     */
     public function invest(Request $request, Machine $machine)
     {
-        $request->validate([
-            'vip_level' => 'required|in:1,2,3',
-        ]);
+        $request->validate(['vip_level' => 'required|in:1,2,3']);
 
         $vipLevel = (int) $request->vip_level;
         $amount = $machine->getStartAmountForVip($vipLevel);
 
         if (!$amount || $amount <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid VIP level or amount'
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Invalid VIP level or amount'], 422);
         }
 
         $user = Auth::user();
 
-        // Check if user already has an active investment in this machine
         $existing = $user->machineInvestments()
             ->where('machine_id', $machine->id)
             ->where('status', MachineInvestment::STATUS_ACTIVE)
             ->first();
 
         if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already have an active investment in this machine.'
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'You already have an active investment in this machine.'], 422);
         }
 
-        // Check wallet balance
         if (!$user->wallet || $user->wallet->balance < $amount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient wallet balance. Required: KES ' . number_format($amount, 2)
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Insufficient wallet balance. Required: KES ' . number_format($amount, 2)], 422);
         }
 
         try {
             DB::transaction(function () use ($user, $machine, $amount, $vipLevel) {
-                // Debit wallet
                 $user->wallet->decrement('balance', $amount);
-
-                // Record transaction
                 $user->transactions()->create([
                     'type' => 'machine_investment',
                     'amount' => -$amount,
@@ -135,13 +110,11 @@ class MachineController extends Controller
                     'wallet_id' => $user->wallet->id,
                 ]);
 
-                // Calculate returns
                 $dailyProfit = $machine->getDailyProfit($amount, $vipLevel);
                 $totalReturn = $machine->getTotalReturn($amount, $vipLevel);
                 $startDate = now();
                 $endDate = $startDate->copy()->addDays($machine->duration_days);
 
-                // Create investment record
                 MachineInvestment::create([
                     'user_id' => $user->id,
                     'machine_id' => $machine->id,
@@ -156,7 +129,6 @@ class MachineController extends Controller
                 ]);
             });
 
-            // Clear cached machine list
             Cache::forget('machines_active');
             Cache::forget('dashboard_' . $user->id);
 
@@ -172,16 +144,10 @@ class MachineController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Investment failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Investment failed: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Investment failed: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Get investment status (JSON)
-     */
     public function status(MachineInvestment $investment)
     {
         if ($investment->user_id !== Auth::id()) {
@@ -207,9 +173,6 @@ class MachineController extends Controller
         ]);
     }
 
-    /**
-     * Get all investments for the authenticated user (JSON)
-     */
     public function myInvestments()
     {
         $user = Auth::user();
@@ -235,70 +198,44 @@ class MachineController extends Controller
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data' => $investments
-        ]);
+        return response()->json(['success' => true, 'data' => $investments]);
     }
 
-    /**
-     * Global machine statistics (for public display)
-     */
     public function globalStats()
     {
         $machines = Machine::where('is_active', true)->get();
         $stats = [
             'total_machines' => $machines->count(),
-            'total_invested' => $machines->sum(function ($m) {
-                return $m->investments()->sum('amount');
-            }),
-            'active_investments' => $machines->sum(function ($m) {
-                return $m->activeInvestments()->count();
-            }),
+            'total_invested' => $machines->sum(fn($m) => $m->investments()->sum('amount')),
+            'active_investments' => $machines->sum(fn($m) => $m->activeInvestments()->count()),
             'total_investors' => MachineInvestment::distinct('user_id')->count('user_id'),
         ];
         return response()->json(['success' => true, 'data' => $stats]);
     }
 
-    /**
-     * Statistics for a single machine
-     */
     public function machineStats(Machine $machine)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $machine->getStatistics()
-        ]);
+        return response()->json(['success' => true, 'data' => $machine->getStatistics()]);
     }
 
-    /**
-     * Public machine list (no auth required)
-     */
     public function publicStats()
     {
         $machines = Machine::where('is_active', true)->get();
         return response()->json([
             'success' => true,
             'data' => [
-                'machines' => $machines->map(function ($m) {
-                    return [
-                        'code' => $m->code,
-                        'name' => $m->name,
-                        'risk_profile' => $m->risk_profile,
-                        'vip1_amount' => $m->getVIPAmounts()[1],
-                        'growth_rate' => $m->growth_rate,
-                    ];
-                }),
-                'total_invested' => $machines->sum(function ($m) {
-                    return $m->investments()->sum('amount');
-                }),
+                'machines' => $machines->map(fn($m) => [
+                    'code' => $m->code,
+                    'name' => $m->name,
+                    'risk_profile' => $m->risk_profile,
+                    'vip1_amount' => $m->getVIPAmounts()[1],
+                    'growth_rate' => $m->growth_rate,
+                ]),
+                'total_invested' => $machines->sum(fn($m) => $m->investments()->sum('amount')),
             ]
         ]);
     }
 
-    /**
-     * Early withdrawal from a machine investment
-     */
     public function earlyWithdraw(MachineInvestment $investment)
     {
         if ($investment->user_id !== Auth::id()) {
@@ -339,10 +276,7 @@ class MachineController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Early withdrawal failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Withdrawal failed: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Withdrawal failed: ' . $e->getMessage()], 500);
         }
     }
 }

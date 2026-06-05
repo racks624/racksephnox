@@ -86,7 +86,6 @@ class DashboardController extends Controller
             'recentTransactions', 'profitHistory', 'weeklyPerformance',
             'portfolio', 'btcPrice', 'referralCount', 'totalBonus',
             'unreadNotificationsCount', 'roi', 'lotteryJackpot'
-            'lotteryJackpot' => LotteryGame::where('is_active', true)->first()?->progressive_jackpot ?? 1000,
         ));
     }
 }
