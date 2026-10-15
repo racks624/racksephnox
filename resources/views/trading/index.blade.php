@@ -11,32 +11,25 @@
             <div>
                 <h1 class="text-3xl md:text-4xl font-bold golden-title flex items-center gap-3 flex-wrap">
                     ₿ Bitcoin Trading Console
-                    <span id="connBadge"
-                          class="text-[10px] px-2 py-1 rounded-full bg-gray-500/30 text-gray-300 font-normal tracking-wider">
+                    <span id="connBadge" class="text-[10px] px-2 py-1 rounded-full bg-gray-500/30 text-gray-300 font-normal tracking-wider">
                         <span id="connDot" class="inline-block w-1.5 h-1.5 rounded-full bg-gray-400 mr-1"></span>
                         <span id="connText">CONNECTING</span>
                     </span>
                 </h1>
                 <p class="text-gold-400 text-sm mt-1">
                     Live Market Price:
-                    <span id="liveBtcPrice" class="text-gold font-bold">
-                        KES {{ number_format($btcPrice ?? 0, 2) }}
-                    </span>
+                    <span id="liveBtcPrice" class="text-gold font-bold">KES {{ number_format($btcPrice ?? 0, 2) }}</span>
                     <span id="priceDelta" class="text-xs ml-2"></span>
                 </p>
             </div>
             <div class="flex gap-4">
                 <div class="text-right">
                     <p class="text-xs text-gold-400 uppercase tracking-widest">Trading Balance</p>
-                    <p class="text-xl md:text-2xl font-bold text-gold">
-                        KES {{ number_format($tradingAccount->balance ?? 0, 2) }}
-                    </p>
+                    <p class="text-xl md:text-2xl font-bold text-gold">KES {{ number_format($tradingAccount->balance ?? 0, 2) }}</p>
                 </div>
                 <div class="text-right">
                     <p class="text-xs text-gold-400 uppercase tracking-widest">BTC Balance</p>
-                    <p class="text-xl md:text-2xl font-bold text-gold">
-                        {{ number_format($tradingAccount->btc_balance ?? 0, 8) }} BTC
-                    </p>
+                    <p class="text-xl md:text-2xl font-bold text-gold">{{ number_format($tradingAccount->btc_balance ?? 0, 8) }} BTC</p>
                 </div>
             </div>
         </div>
@@ -66,8 +59,7 @@
                         @foreach(['1m','5m','15m','1h','4h','1d'] as $iv)
                             <button onclick="changeTimeframe('{{ $iv }}')"
                                     data-interval="{{ $iv }}"
-                                    class="interval-btn btn-outline-silver text-xs px-3 py-1 transition
-                                           {{ $iv === '1h' ? 'active' : '' }}">
+                                    class="interval-btn btn-outline-silver text-xs px-3 py-1 transition {{ $iv === '1h' ? 'active' : '' }}">
                                 {{ $iv }}
                             </button>
                         @endforeach
@@ -78,7 +70,9 @@
                     </div>
                 </div>
 
-                <div id="chart" style="height: 420px; width: 100%; position: relative; touch-action: none;"></div>
+                <div id="chartWrapper" class="chart-wrapper">
+                    <div id="chart" class="chart-canvas"></div>
+                </div>
 
                 <div class="flex justify-between items-center mt-2 gap-2">
                     <div id="chartStatus" class="text-xs text-gold-400 min-h-[18px]">Initialising chart…</div>
@@ -101,6 +95,7 @@
                 </p>
             </div>
 
+            {{-- ORDER ENTRY --}}
             <div class="card-golden p-5">
                 <h2 class="text-lg font-bold text-gold mb-4">⚡ Place Order</h2>
 
@@ -202,8 +197,7 @@
                             <div class="flex justify-between items-center p-3 bg-gold/5 rounded-lg hover:bg-gold/10 transition">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-xs font-bold px-2 py-0.5 rounded-full
-                                            {{ $order->side === 'buy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' }}">
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ $order->side === 'buy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' }}">
                                             {{ strtoupper($order->side) }}
                                         </span>
                                         <span class="text-xs text-gold-400 uppercase">{{ $order->order_type }}</span>
@@ -211,8 +205,7 @@
                                     <p class="text-sm text-ivory">{{ number_format($order->amount_btc, 8) }} BTC</p>
                                     <p class="text-xs text-gold-400/70">@ KES {{ number_format($order->limit_price ?? 0, 2) }}</p>
                                 </div>
-                                <form action="{{ route('trading.cancel', $order) }}" method="POST"
-                                      onsubmit="return confirm('Cancel this order?')">
+                                <form action="{{ route('trading.cancel', $order) }}" method="POST" onsubmit="return confirm('Cancel this order?')">
                                     @csrf
                                     <button class="text-red-400 text-xs hover:text-red-300 px-2 py-1">✕ Cancel</button>
                                 </form>
@@ -228,7 +221,6 @@
         {{-- ORDER HISTORY --}}
         <div class="card-golden p-5">
             <h3 class="text-lg font-bold text-gold mb-4">📋 Recent Completed Orders</h3>
-
             @if($orderHistory->count())
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -268,7 +260,49 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/klinecharts/dist/klinecharts.min.js"></script>
+{{-- KLineChart bundled via Vite — no CDN --}}
+@vite(['resources/js/trading/chart.js'])
+
+<style>
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        min-height: 320px;
+        max-height: 70vh;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        background: linear-gradient(135deg, rgba(15,23,42,0.6) 0%, rgba(10,10,20,0.9) 100%);
+    }
+    @media (min-width: 1024px) { .chart-wrapper { aspect-ratio: auto; height: 480px; } }
+    @media (max-width: 640px)  { .chart-wrapper { aspect-ratio: auto; height: 340px; } }
+
+    .chart-canvas {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        inset: 0;
+        touch-action: pan-y pinch-zoom;
+        will-change: contents;
+    }
+    .chart-canvas canvas { display: block; transition: opacity 200ms ease; }
+
+    .interval-btn.active,
+    .indicator-btn.active {
+        background: rgba(212, 175, 55, 0.3);
+        color: #FFD700;
+        border-color: #D4AF37;
+        box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    }
+    #liveBtcPrice { transition: color 0.3s ease, transform 0.3s ease; display: inline-block; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(212, 175, 55, 0.05); border-radius: 3px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
+    #chartPanel.fixed { background: #0a0a0a; }
+    body.chart-fullscreen { overflow: hidden; }
+    @media (prefers-reduced-motion: reduce) { #liveBtcPrice { transition: none !important; } }
+</style>
+
 <script>
 (function () {
     'use strict';
@@ -284,18 +318,17 @@
     };
 
     const state = {
-        chart:            null,
-        currentInterval:  '1h',
-        candleTimer:      null,
-        orderBookTimer:   null,
-        countdownTimer:   null,
-        candleRetries:    0,
-        bookRetries:      0,
-        lastPrice:        null,
+        currentInterval: '1h',
+        candleTimer:     null,
+        orderBookTimer:  null,
+        countdownTimer:  null,
+        candleRetries:   0,
+        bookRetries:     0,
+        lastPrice:       null,
         activeIndicators: {},
-        isFullscreen:     false,
-        crosshairOn:      false,
-        paused:           false,
+        isFullscreen:    false,
+        paused:          false,
+        initialized:     false,
     };
 
     const el = {
@@ -312,10 +345,7 @@
         crosshair:  document.getElementById('crosshairPanel'),
     };
 
-    const fmtKes = (v, decimals = 2) =>
-        'KES ' + Number(v || 0).toLocaleString('en-KE', {
-            minimumFractionDigits: decimals, maximumFractionDigits: decimals,
-        });
+    const fmtKes = (v, d = 2) => 'KES ' + Number(v || 0).toLocaleString('en-KE', { minimumFractionDigits: d, maximumFractionDigits: d });
 
     const setStatus = (msg, isErr = false) => {
         if (!el.status) return;
@@ -325,14 +355,14 @@
 
     const setConnection = (mode) => {
         const map = {
-            live:         { color: 'bg-green-400',  badge: 'bg-green-500/20 text-green-300',  label: 'LIVE' },
-            connecting:   { color: 'bg-yellow-400', badge: 'bg-yellow-500/20 text-yellow-300', label: 'CONNECTING' },
-            reconnecting: { color: 'bg-orange-400', badge: 'bg-orange-500/20 text-orange-300', label: 'RECONNECTING' },
-            offline:      { color: 'bg-red-500',    badge: 'bg-red-500/20 text-red-300',       label: 'OFFLINE' },
+            live:         { dot: 'bg-green-400',  badge: 'bg-green-500/20 text-green-300',  label: 'LIVE' },
+            connecting:   { dot: 'bg-yellow-400', badge: 'bg-yellow-500/20 text-yellow-300', label: 'CONNECTING' },
+            reconnecting: { dot: 'bg-orange-400', badge: 'bg-orange-500/20 text-orange-300', label: 'RECONNECTING' },
+            offline:      { dot: 'bg-red-500',    badge: 'bg-red-500/20 text-red-300',       label: 'OFFLINE' },
         };
         const s = map[mode] || map.connecting;
         el.connDot?.classList.remove('bg-gray-400','bg-green-400','bg-yellow-400','bg-orange-400','bg-red-500');
-        el.connDot?.classList.add(s.color);
+        el.connDot?.classList.add(s.dot);
         el.connBadge?.classList.remove('bg-gray-500/30','bg-green-500/20','bg-yellow-500/20','bg-orange-500/20','bg-red-500/20');
         el.connBadge?.classList.add(...s.badge.split(' '));
         el.connText && (el.connText.textContent = s.label);
@@ -353,56 +383,19 @@
     };
 
     function initChart() {
-        if (!el.chart || typeof klinecharts === 'undefined') {
-            setStatus('⚠️ Chart library failed to load', true);
+        if (!el.chart) return;
+        if (!window.RackChart) {
+            setStatus('⚠️ RackChart bundle not loaded — run npm run build', true);
             setConnection('offline');
             return;
         }
 
-        state.chart = klinecharts.init(el.chart, {
-            styles: {
-                grid: {
-                    show: true,
-                    horizontal: { color: 'rgba(51,65,85,0.35)' },
-                    vertical:   { color: 'rgba(51,65,85,0.35)' },
-                },
-                candle: {
-                    bar: {
-                        upColor:   '#26A69A', downColor: '#EF5350',
-                        upBorderColor: '#26A69A', downBorderColor: '#EF5350',
-                        upWickColor:   '#26A69A', downWickColor:   '#EF5350',
-                    },
-                    priceMark: {
-                        last: { show: true, upColor: '#26A69A', downColor: '#EF5350',
-                                text: { color: '#0F172A', size: 11 } },
-                        high: { show: false }, low: { show: false },
-                    },
-                },
-                xAxis: {
-                    axisLine: { color: 'rgba(212,175,55,0.3)' },
-                    tickLine: { color: 'rgba(212,175,55,0.3)' },
-                    tickText: { color: '#D4AF37', size: 11 },
-                },
-                yAxis: {
-                    axisLine: { color: 'rgba(212,175,55,0.3)' },
-                    tickLine: { color: 'rgba(212,175,55,0.3)' },
-                    tickText: { color: '#D4AF37', size: 11 },
-                },
-                crosshair: {
-                    horizontal: { line: { color: '#D4AF37', style: 'dashed' },
-                                  text: { backgroundColor: '#D4AF37', color: '#0F172A' } },
-                    vertical:   { line: { color: '#D4AF37', style: 'dashed' },
-                                  text: { backgroundColor: '#D4AF37', color: '#0F172A' } },
-                },
-            },
-            timezone: CONFIG.timezone,
-        });
-
         try {
-            state.chart.subscribeAction('onCrosshairChange', (data) => {
+            window.RackChart.init(el.chart, { timezone: CONFIG.timezone });
+
+            window.RackChart.onCrosshair(el.chart, (data) => {
                 if (!data || !data.kLineData) {
                     el.crosshair?.classList.add('hidden');
-                    state.crosshairOn = false;
                     return;
                 }
                 const k = data.kLineData;
@@ -414,34 +407,45 @@
                     `L ${num(k.low).toLocaleString()} · ` +
                     `C <span class="${k.close >= k.open ? 'text-green-400' : 'text-red-400'}">${num(k.close).toLocaleString()}</span>`;
                 el.crosshair.classList.remove('hidden');
-                state.crosshairOn = true;
             });
-        } catch (e) { /* optional hook — safe to skip */ }
 
-        handleResize();
-        window.addEventListener('resize', debounce(handleResize, 120));
-
-        loadCandles();
-        startTimers();
-
-        setTimeout(() => addIndicator('MA', false, [{ calcParams: [7, 25, 99] }]), 400);
+            attachResizeObserver();
+            state.initialized = true;
+            loadCandles();
+            startTimers();
+            setTimeout(() => addIndicator('MA'), 400);
+            setStatus('Chart ready · loading candles…');
+        } catch (e) {
+            console.error('[Chart] init failed:', e);
+            setStatus('Chart init failed: ' + e.message, true);
+        }
     }
 
-    let resizeRAF = null;
-    function handleResize() {
-        if (resizeRAF) cancelAnimationFrame(resizeRAF);
-        resizeRAF = requestAnimationFrame(() => {
-            if (!state.chart || !el.chart) return;
-            const w = el.chart.clientWidth;
-            const h = state.isFullscreen ? window.innerHeight - 120 : 420;
-            state.chart.resize(w, h);
+    function attachResizeObserver() {
+        if (!el.chart || typeof ResizeObserver === 'undefined') return;
+
+        let lastW = el.chart.clientWidth;
+        let lastH = el.chart.clientHeight;
+        let rafId = null;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const w = Math.round(entry.contentRect.width);
+                const h = Math.round(entry.contentRect.height);
+                if (w === lastW && h === lastH) return;
+                lastW = w; lastH = h;
+                if (rafId) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                    window.RackChart?.resize(el.chart, w, h);
+                });
+            }
         });
+        observer.observe(el.chart.parentElement || el.chart);
     }
 
     async function loadCandles() {
         try {
             setConnection(state.candleRetries ? 'reconnecting' : 'connecting');
-
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -452,7 +456,6 @@
                 cache: 'no-store',
             });
             clearTimeout(timeout);
-
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const raw = await res.json();
@@ -464,26 +467,16 @@
             const mapped = raw.map(c => {
                 const ts = toMillis(c.time ?? c.open_time);
                 if (ts === null) return null;
-                return {
-                    timestamp: ts,
-                    open:   num(c.open),
-                    high:   num(c.high),
-                    low:    num(c.low),
-                    close:  num(c.close),
-                    volume: num(c.volume, 0),
-                };
+                return { timestamp: ts, open: num(c.open), high: num(c.high), low: num(c.low), close: num(c.close), volume: num(c.volume, 0) };
             }).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
 
             if (!mapped.length) throw new Error('No valid candles');
 
-            state.chart.applyNewData(mapped);
+            window.RackChart.applyData(el.chart, mapped);
             state.candleRetries = 0;
             setConnection('live');
             setStatus(`✅ ${mapped.length} candles · ${state.currentInterval} · ${new Date().toLocaleTimeString('en-KE')}`);
-
-            const last = mapped[mapped.length - 1].close;
-            updatePrice(last);
-
+            updatePrice(mapped[mapped.length - 1].close);
         } catch (e) {
             state.candleRetries++;
             const backoff = Math.min(CONFIG.backoffMax, CONFIG.backoffBase * 2 ** Math.min(state.candleRetries - 1, 5));
@@ -502,14 +495,9 @@
             const delta = newPrice - prev;
             const pct = ((delta / prev) * 100).toFixed(2);
             const up = delta > 0;
-
             el.price.style.color = up ? '#26A69A' : '#EF5350';
             el.price.style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                el.price.style.color = '#D4AF37';
-                el.price.style.transform = 'scale(1)';
-            }, 800);
-
+            setTimeout(() => { el.price.style.color = '#D4AF37'; el.price.style.transform = 'scale(1)'; }, 800);
             if (el.priceDelta) {
                 el.priceDelta.textContent = `${up ? '▲' : '▼'} ${Math.abs(delta).toLocaleString()} (${pct}%)`;
                 el.priceDelta.style.color = up ? '#26A69A' : '#EF5350';
@@ -520,15 +508,13 @@
 
     function startCountdown() {
         if (state.countdownTimer) clearInterval(state.countdownTimer);
-        const cycleMs = CONFIG.candleRefreshMs;
         let elapsed = 0;
-        const tickMs = 250;
         state.countdownTimer = setInterval(() => {
-            elapsed += tickMs;
-            const remaining = Math.max(0, cycleMs - elapsed);
+            elapsed += 250;
+            const remaining = Math.max(0, CONFIG.candleRefreshMs - elapsed);
             if (el.countdown) el.countdown.textContent = `· refresh in ${(remaining / 1000).toFixed(1)}s`;
-            if (elapsed >= cycleMs) elapsed = 0;
-        }, tickMs);
+            if (elapsed >= CONFIG.candleRefreshMs) elapsed = 0;
+        }, 250);
     }
 
     function startTimers() {
@@ -578,50 +564,71 @@
     };
 
     window.toggleIndicator = function (name) {
-        if (!state.chart) return;
+        if (!window.RackChart) return;
         const btn = document.querySelector(`.indicator-btn[data-ind="${name}"]`);
         const exists = state.activeIndicators[name];
 
         if (exists) {
-            state.chart.removeIndicator('candle_pane', exists);
+            window.RackChart.removeIndicator(el.chart, 'candle_pane', exists);
             delete state.activeIndicators[name];
             btn?.classList.remove('active');
             return;
         }
-
-        try {
-            const id = state.chart.createIndicator(name, false, { id: 'candle_pane' }, defaultParams(name));
-            if (id) {
-                state.activeIndicators[name] = id;
-                btn?.classList.add('active');
-            }
-        } catch (e) { console.warn('[Indicator]', name, e.message); }
+        const id = window.RackChart.addIndicator(el.chart, name);
+        if (id) {
+            state.activeIndicators[name] = id;
+            btn?.classList.add('active');
+        }
     };
 
-    function defaultParams(name) {
-        const map = {
-            MA:   [{ calcParams: [5, 10, 30, 60] }],
-            EMA:  [{ calcParams: [6, 12, 20] }],
-            BOLL: [{ calcParams: [20, 2] }],
-            MACD: [{ calcParams: [12, 26, 9] }],
-            RSI:  [{ calcParams: [6, 12, 24] }],
-            KDJ:  [{ calcParams: [9, 3, 3] }],
-            OBV:  [{ calcParams: [30] }],
-        };
-        return map[name] || [{}];
+    function addIndicator(name) {
+        if (!window.RackChart || state.activeIndicators[name]) return;
+        const id = window.RackChart.addIndicator(el.chart, name);
+        if (id) {
+            state.activeIndicators[name] = id;
+            document.querySelector(`.indicator-btn[data-ind="${name}"]`)?.classList.add('active');
+        }
     }
 
-    function addIndicator(name, toggle, params) {
-        if (!state.chart) return;
-        if (state.activeIndicators[name]) return;
-        try {
-            const id = state.chart.createIndicator(name, false, { id: 'candle_pane' }, params || defaultParams(name));
-            if (id) {
-                state.activeIndicators[name] = id;
-                document.querySelector(`.indicator-btn[data-ind="${name}"]`)?.classList.add('active');
-            }
-        } catch (e) { console.warn(e); }
-    }
+    window.toggleFullscreen = function () {
+        if (!state.isFullscreen) {
+            el.panel?.classList.add('fixed','inset-0','z-50','p-6','overflow-auto');
+            el.panel?.classList.remove('card-golden');
+            document.body.classList.add('chart-fullscreen');
+            state.isFullscreen = true;
+        } else {
+            el.panel?.classList.remove('fixed','inset-0','z-50','p-6','overflow-auto');
+            el.panel?.classList.add('card-golden');
+            document.body.classList.remove('chart-fullscreen');
+            state.isFullscreen = false;
+        }
+        setTimeout(() => window.RackChart?.resize(el.chart), 100);
+    };
+
+    window.screenshotChart = function () {
+        const url = window.RackChart?.screenshot(el.chart);
+        if (!url) return;
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `racksephnox-chart-${Date.now()}.png`;
+        a.click();
+    };
+
+    window.resetZoom = function () {
+        window.RackChart?.scrollToRealTime(el.chart);
+        loadCandles();
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const map = { '1':'1m', '2':'5m', '3':'15m', '4':'1h', '5':'4h', '6':'1d' };
+        if (map[e.key]) { changeTimeframe(map[e.key]); return; }
+        const k = e.key.toLowerCase();
+        if (k === 'f') toggleFullscreen();
+        if (k === 's') screenshotChart();
+        if (k === 'r') resetZoom();
+    });
 
     async function loadOrderBook() {
         if (!el.book) return;
@@ -655,7 +662,6 @@
                         <span>${num(b.amount).toFixed(6)}</span></div>`;
                 });
             }
-
             el.book.innerHTML = html;
             state.bookRetries = 0;
         } catch (e) {
@@ -665,46 +671,6 @@
         }
     }
 
-    window.toggleFullscreen = function () {
-        if (!state.isFullscreen) {
-            el.panel?.classList.add('fixed','inset-0','z-50','p-6','overflow-auto');
-            el.panel?.classList.remove('card-golden');
-            state.isFullscreen = true;
-        } else {
-            el.panel?.classList.remove('fixed','inset-0','z-50','p-6','overflow-auto');
-            el.panel?.classList.add('card-golden');
-            state.isFullscreen = false;
-        }
-        handleResize();
-    };
-
-    window.screenshotChart = function () {
-        if (!state.chart) return;
-        try {
-            const url = state.chart.getConvertPictureUrl(true, 'png');
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `racksephnox-chart-${Date.now()}.png`;
-            a.click();
-        } catch (e) { console.warn('Screenshot failed', e); }
-    };
-
-    window.resetZoom = function () {
-        if (!state.chart) return;
-        loadCandles();
-    };
-
-    document.addEventListener('keydown', (e) => {
-        if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        const map = { '1':'1m', '2':'5m', '3':'15m', '4':'1h', '5':'4h', '6':'1d' };
-        if (map[e.key]) { changeTimeframe(map[e.key]); return; }
-        const k = e.key.toLowerCase();
-        if (k === 'f') toggleFullscreen();
-        if (k === 's') screenshotChart();
-        if (k === 'r') resetZoom();
-    });
-
     function bindTabs() {
         const buyTab  = document.getElementById('buyTab');
         const sellTab = document.getElementById('sellTab');
@@ -712,16 +678,14 @@
         const sellForm= document.getElementById('sellForm');
 
         buyTab?.addEventListener('click', () => {
-            buyForm?.classList.remove('hidden');
-            sellForm?.classList.add('hidden');
+            buyForm?.classList.remove('hidden'); sellForm?.classList.add('hidden');
             buyTab.classList.remove('bg-green-500/10','text-green-400/60');
             buyTab.classList.add('bg-green-500/25','text-green-400');
             sellTab.classList.remove('bg-red-500/25','text-red-400');
             sellTab.classList.add('bg-red-500/10','text-red-400/60');
         });
         sellTab?.addEventListener('click', () => {
-            sellForm?.classList.remove('hidden');
-            buyForm?.classList.add('hidden');
+            sellForm?.classList.remove('hidden'); buyForm?.classList.add('hidden');
             sellTab.classList.remove('bg-red-500/10','text-red-400/60');
             sellTab.classList.add('bg-red-500/25','text-red-400');
             buyTab.classList.remove('bg-green-500/25','text-green-400');
@@ -740,36 +704,19 @@
         });
     }
 
-    function debounce(fn, ms) {
-        let t;
-        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
+    function boot() {
         setConnection('connecting');
         initChart();
         loadOrderBook();
         bindTabs();
         bindOrderTypeSelects();
-    });
+    }
 
-    const style = document.createElement('style');
-    style.textContent = `
-        .interval-btn.active, .indicator-btn.active {
-            background: rgba(212, 175, 55, 0.3);
-            color: #FFD700;
-            border-color: #D4AF37;
-            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
-        }
-        #liveBtcPrice { transition: color 0.3s ease, transform 0.3s ease; display: inline-block; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: rgba(212, 175, 55, 0.05); border-radius: 3px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
-        #chart canvas { border-radius: 0.5rem; }
-        #chartPanel.fixed { background: #0a0a0a; }
-        @media (prefers-reduced-motion: reduce) { #liveBtcPrice { transition: none !important; } }
-    `;
-    document.head.appendChild(style);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
 })();
 </script>
 @endsection

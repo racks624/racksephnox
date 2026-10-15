@@ -16,10 +16,8 @@ class CopyTrade extends Model
     ];
 
     protected $casts = [
-        'original_amount' => 'float',
-        'copied_amount'   => 'float',
-        'original_price'  => 'float',
-        'copied_kes'      => 'float',
+        'original_amount' => 'float', 'copied_amount' => 'float',
+        'original_price' => 'float', 'copied_kes' => 'float',
     ];
 
     public function originalOrder() { return $this->belongsTo(TradeOrder::class, 'original_order_id'); }

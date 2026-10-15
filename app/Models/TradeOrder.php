@@ -19,14 +19,10 @@ class TradeOrder extends Model
     ];
 
     protected $casts = [
-        'amount_btc'    => 'float',
-        'filled_amount' => 'float',
-        'limit_price'   => 'float',
-        'stop_price'    => 'float',
-        'price_per_btc' => 'float',
-        'filled_kes'    => 'float',
-        'take_profit'   => 'float',
-        'stop_loss'     => 'float',
+        'amount_btc' => 'float', 'filled_amount' => 'float',
+        'limit_price' => 'float', 'stop_price' => 'float',
+        'price_per_btc' => 'float', 'filled_kes' => 'float',
+        'take_profit' => 'float', 'stop_loss' => 'float',
     ];
 
     public function user() { return $this->belongsTo(User::class); }

@@ -126,6 +126,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{loan}/cancel', [App\Http\Controllers\LoanController::class, 'cancel'])->name('cancel');
     });
 
+
+    /* ==================== DEPOSIT / BANKING ==================== */
+    Route::prefix('deposit')->name('deposit.')->group(function () {
+        Route::get('/',       [App\Http\Controllers\DepositController::class, 'form'])->name('form');
+        Route::post('/',      [App\Http\Controllers\DepositController::class, 'submit'])->name('submit');
+        Route::get('/{deposit}/status', [App\Http\Controllers\DepositController::class, 'status'])->name('status');
+    });
+
     // Machines (web)
     Route::prefix('machines')->name('machines.')->group(function () {
         Route::get('/', [MachineController::class, 'index'])->name('index');

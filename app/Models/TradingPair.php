@@ -15,10 +15,8 @@ class TradingPair extends Model
     ];
 
     protected $casts = [
-        'min_trade_amount' => 'float',
-        'max_trade_amount' => 'float',
-        'tick_size'        => 'float',
-        'is_active'        => 'boolean',
+        'min_trade_amount' => 'float', 'max_trade_amount' => 'float',
+        'tick_size' => 'float', 'is_active' => 'boolean',
     ];
 
     public function candles() { return $this->hasMany(TradingCandle::class, 'pair_id'); }

@@ -15,11 +15,9 @@ class TradingBonusTracker extends Model
     ];
 
     protected $casts = [
-        'bonus_amount'    => 'float',
-        'required_volume' => 'float',
-        'achieved_volume' => 'float',
-        'is_claimed'      => 'boolean',
-        'expires_at'      => 'datetime',
+        'bonus_amount' => 'float', 'required_volume' => 'float',
+        'achieved_volume' => 'float', 'is_claimed' => 'boolean',
+        'expires_at' => 'datetime',
     ];
 
     public function user() { return $this->belongsTo(User::class); }

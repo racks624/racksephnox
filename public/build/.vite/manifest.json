@@ -3,34 +3,31 @@
     "file": "assets/echo-Cd4fqn7m.js",
     "name": "echo"
   },
-  "_vendor-qFyJwsfU.js": {
-    "file": "assets/vendor-qFyJwsfU.js",
-    "name": "vendor"
+  "_klinecharts-DZ8okgkE.js": {
+    "file": "assets/klinecharts-DZ8okgkE.js",
+    "name": "klinecharts"
   },
   "resources/css/app.css": {
-    "file": "assets/app-Cj_NbUbW.css",
+    "file": "assets/app-CnYar9_2.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D_U5MgPf.js",
+    "file": "assets/app-CYJiut6R.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
       "resources/js/bootstrap.js",
-      "resources/js/lottery/sounds.js",
-      "_vendor-qFyJwsfU.js",
       "_echo-Cd4fqn7m.js"
     ]
   },
   "resources/js/bootstrap.js": {
-    "file": "assets/bootstrap-B62PBB2n.js",
+    "file": "assets/bootstrap-CswqpH_6.js",
     "name": "bootstrap",
     "src": "resources/js/bootstrap.js",
     "isEntry": true,
     "imports": [
-      "_vendor-qFyJwsfU.js",
       "_echo-Cd4fqn7m.js"
     ]
   },
@@ -61,34 +58,19 @@
     "src": "resources/js/lottery-sounds.js",
     "isEntry": true
   },
-  "resources/js/lottery/canvas-slot.js": {
-    "file": "assets/canvas-slot-l0sNRNKZ.js",
-    "name": "canvas-slot",
-    "src": "resources/js/lottery/canvas-slot.js",
-    "isEntry": true
-  },
-  "resources/js/lottery/sounds.js": {
-    "file": "assets/sounds-CEAuHILr.js",
-    "name": "sounds",
-    "src": "resources/js/lottery/sounds.js",
-    "isEntry": true
-  },
-  "resources/js/lottery/svg-symbols.js": {
-    "file": "assets/svg-symbols-l0sNRNKZ.js",
-    "name": "svg-symbols",
-    "src": "resources/js/lottery/svg-symbols.js",
-    "isEntry": true
-  },
-  "resources/js/lottery/symbols.js": {
-    "file": "assets/symbols-l0sNRNKZ.js",
-    "name": "symbols",
-    "src": "resources/js/lottery/symbols.js",
-    "isEntry": true
-  },
   "resources/js/theme.js": {
     "file": "assets/theme-D6YWvvyA.js",
     "name": "theme",
     "src": "resources/js/theme.js",
     "isEntry": true
+  },
+  "resources/js/trading/chart.js": {
+    "file": "assets/chart-OxjR9Dep.js",
+    "name": "chart",
+    "src": "resources/js/trading/chart.js",
+    "isEntry": true,
+    "imports": [
+      "_klinecharts-DZ8okgkE.js"
+    ]
   }
 }

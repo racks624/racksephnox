@@ -18,12 +18,9 @@ class TradingProfile extends Model
     ];
 
     protected $casts = [
-        'is_public'          => 'boolean',
-        'allow_copy_trading' => 'boolean',
-        'copy_ratio'         => 'float',
-        'total_trades'       => 'integer',
-        'winning_trades'     => 'integer',
-        'total_profit'       => 'float',
+        'is_public' => 'boolean', 'allow_copy_trading' => 'boolean',
+        'copy_ratio' => 'float', 'total_trades' => 'integer',
+        'winning_trades' => 'integer', 'total_profit' => 'float',
     ];
 
     public function user() { return $this->belongsTo(User::class); }
@@ -38,9 +35,7 @@ class TradingProfile extends Model
 
     public function getLosingTradesAttribute(): int
     {
-        $total = (int) ($this->total_trades ?? 0);
-        $wins  = (int) ($this->winning_trades ?? 0);
-        return max(0, $total - $wins);
+        return max(0, (int) ($this->total_trades ?? 0) - (int) ($this->winning_trades ?? 0));
     }
 
     public function getDisplayNameAttribute($value): string

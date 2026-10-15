@@ -15,13 +15,9 @@ class TradingCandle extends Model
     ];
 
     protected $casts = [
-        'open_time'  => 'datetime',
-        'close_time' => 'datetime',
-        'open'       => 'float',
-        'high'       => 'float',
-        'low'        => 'float',
-        'close'      => 'float',
-        'volume'     => 'float',
+        'open_time' => 'datetime', 'close_time' => 'datetime',
+        'open' => 'float', 'high' => 'float', 'low' => 'float',
+        'close' => 'float', 'volume' => 'float',
     ];
 
     public function pair() { return $this->belongsTo(TradingPair::class, 'pair_id'); }

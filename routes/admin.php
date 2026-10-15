@@ -96,3 +96,21 @@ Route::prefix('lottery')->name('lottery.')->group(function () {
     Route::get('/{lottery}/edit',      [App\Http\Controllers\Admin\LotteryController::class, 'edit'])->name('edit');
     Route::put('/{lottery}',           [App\Http\Controllers\Admin\LotteryController::class, 'update'])->name('update');
 });
+
+// ==================== ADMIN · DEPOSIT VERIFICATION ====================
+Route::prefix('deposits')->name('deposits.')->group(function () {
+    Route::get('/',                 [App\Http\Controllers\Admin\DepositVerificationController::class, 'index'])->name('index');
+    Route::get('/{deposit}',        [App\Http\Controllers\Admin\DepositVerificationController::class, 'show'])->name('show');
+    Route::post('/{deposit}/verify',[App\Http\Controllers\Admin\DepositVerificationController::class, 'verify'])->name('verify');
+    Route::post('/{deposit}/approve',[App\Http\Controllers\Admin\DepositVerificationController::class, 'approve'])->name('approve');
+    Route::post('/{deposit}/reject',[App\Http\Controllers\Admin\DepositVerificationController::class, 'reject'])->name('reject');
+    Route::post('/bulk-approve',    [App\Http\Controllers\Admin\DepositVerificationController::class, 'bulkApprove'])->name('bulk-approve');
+});
+
+/* ==================== ADMIN · DEPOSIT VERIFICATION ==================== */
+Route::prefix('deposits')->name('deposits.')->group(function () {
+    Route::get('/',                    [App\Http\Controllers\Admin\DepositVerificationController::class, 'index'])->name('index');
+    Route::post('/{deposit}/verify',   [App\Http\Controllers\Admin\DepositVerificationController::class, 'verify'])->name('verify');
+    Route::post('/{deposit}/reject',   [App\Http\Controllers\Admin\DepositVerificationController::class, 'reject'])->name('reject');
+    Route::post('/upload-statement',   [App\Http\Controllers\Admin\DepositVerificationController::class, 'uploadStatement'])->name('upload-statement');
+});
