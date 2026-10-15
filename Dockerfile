@@ -43,7 +43,7 @@ RUN npm run build
 # ─────────────────────────────────────────────────────────────
 # STAGE 3 — Production runtime (Nginx + PHP-FPM)
 # ─────────────────────────────────────────────────────────────
-FROM php:8.4-fpm-alpine AS runtime
+FROM php:8.5-fpm-alpine AS runtime
 
 # ── System dependencies + PHP extensions ──
 RUN apk add --no-cache \
