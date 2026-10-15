@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
 <title>Documentation — Racksephnox</title>
-<meta name="description" content="Complete technical reference for the Racksephnox platform — 20 frameworks, 60+ tables, 40+ controllers.">
+<meta name="description" content="Complete technical reference for the Racksephnox platform — 20 frameworks, 60+ tables, 40+ controllers, 17 live interactive demos.">
+<meta property="og:title" content="Racksephnox Documentation">
+<meta property="og:description" content="Every system. Every module. Every workflow. With live demos.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://racksephnox.riqelsspiraltech.us.ci/docs.html">
+<link rel="canonical" href="https://racksephnox.riqelsspiraltech.us.ci/docs.html">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -33,7 +39,7 @@
 <main class="wrap docs-shell">
 
   <aside class="sidebar" id="sidebar">
-    <input type="text" class="sb-search" id="sb-search" placeholder="Search frameworks…  (press /)" autocomplete="off">
+    <input type="text" class="sb-search" id="sb-search" placeholder="Search frameworks…  ( / )" autocomplete="off">
     <div class="sb-group">All Frameworks</div>
     <ul class="sb-list" id="sidebar-list"></ul>
   </aside>
@@ -56,9 +62,10 @@
 </footer>
 
 <script src="assets/js/data.js"></script>
+<script src="assets/js/modules.js"></script>
 <script src="assets/js/docs.js"></script>
 <script>
-  // Simple mobile burger for docs nav
+  // Mobile burger for docs nav
   document.getElementById('burger')?.addEventListener('click', function(){
     document.getElementById('nav-links')?.classList.toggle('open');
   });

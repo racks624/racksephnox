@@ -1,18 +1,17 @@
 /* ============================================================
-   RACKSEPHNOX — Landing interactions
+   RACKSEPHNOX — Landing Interactions (Industrial)
    ============================================================ */
-
 (function () {
   'use strict';
 
-  const { stats, name, tagline, sig } = window.RX_META;
+  const { stats, name, tagline, sig } = window.RX_META || {};
 
   /* ---------- Hero spiral canvas ---------- */
   function spiral() {
     const c = document.getElementById('spiral');
     if (!c) return;
     const ctx = c.getContext('2d');
-    let w, h, t = 0, raf;
+    let w, h, t = 0, raf, paused = false;
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -24,6 +23,7 @@
     const PHI = 1.61803398875;
 
     function draw() {
+      if (paused) return;
       ctx.clearRect(0, 0, w, h);
       const cx = w / 2, cy = h / 2;
       const maxR = Math.min(w, h) * 0.62;
@@ -38,7 +38,7 @@
         const a = (1 - f) * 0.55 * (0.6 + 0.4 * Math.sin(t * 2 + i * 0.1));
         const s = 0.6 + (1 - f) * 1.6;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(212,175,55,${a})`;
+        ctx.fillStyle = 'rgba(212,175,55,' + a.toFixed(3) + ')';
         ctx.arc(x, y, s, 0, Math.PI * 2);
         ctx.fill();
       }
@@ -49,11 +49,10 @@
     resize();
     window.addEventListener('resize', resize);
     draw();
-
-    // Pause when tab hidden
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) cancelAnimationFrame(raf);
-      else draw();
+      paused = document.hidden;
+      if (!paused) draw();
+      else cancelAnimationFrame(raf);
     });
   }
 
@@ -62,40 +61,43 @@
     const el = document.getElementById('stats');
     if (!el) return;
     el.innerHTML = stats.map(s =>
-      `<div class="stat"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`
+      '<div class="stat"><div class="num">' + s.num + '</div><div class="lbl">' + s.lbl + '</div></div>'
     ).join('');
   }
 
   /* ---------- Principles render ---------- */
   function renderPrinciples() {
-    const el = document.getElementById('principles');
+    const el = document.getElementById('principles-grid');
     if (!el) return;
-    el.innerHTML = window.RX_PRINCIPLES.map(p => `
-      <div class="principle">
-        <span class="ico">${p.ico}</span>
-        <h3>${p.t}</h3>
-        <p>${p.d}</p>
-      </div>
-    `).join('');
+    el.innerHTML = window.RX_PRINCIPLES.map(p =>
+      '<div class="principle">' +
+        '<span class="ico">' + p.ico + '</span>' +
+        '<h3>' + p.t + '</h3>' +
+        '<p>' + p.d + '</p>' +
+      '</div>'
+    ).join('');
   }
 
-  /* ---------- Framework grid render ---------- */
+  /* ---------- Framework grid ---------- */
   function renderFrameworks() {
     const el = document.getElementById('fw-grid');
     if (!el) return;
-    el.innerHTML = window.RX_FRAMEWORKS.map(f => `
-      <a class="fw-card" href="docs.html#/f/${f.id}">
-        <div class="top">
-          <span class="fw-num">${String(f.num).padStart(2, '0')}</span>
-          <span class="fw-ico">${f.icon}</span>
-        </div>
-        <h3>${f.title}</h3>
-        <p>${f.brief}</p>
-        <span class="go">Open →</span>
-      </a>
-    `).join('');
+    el.innerHTML = window.RX_FRAMEWORKS.map(f => {
+      const badge = f.demo ? '<span class="demo-tag" style="margin-left:auto;">● Live demo</span>' : '';
+      return '<a class="fw-card" href="docs.html#/f/' + f.id + '">' +
+        '<div class="top">' +
+          '<span class="fw-num">' + String(f.num).padStart(2,'0') + '</span>' +
+          '<span class="fw-ico">' + f.icon + '</span>' +
+        '</div>' +
+        '<h3>' + f.title + '</h3>' +
+        '<p>' + f.brief + '</p>' +
+        '<div style="display:flex;align-items:center;gap:8px;position:relative;z-index:2;">' +
+          '<span class="go">Open →</span>' +
+          badge +
+        '</div>' +
+      '</a>';
+    }).join('');
 
-    // Cursor-follow glow
     el.querySelectorAll('.fw-card').forEach(card => {
       card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
@@ -105,14 +107,14 @@
     });
   }
 
-  /* ---------- Tech chips ---------- */
+  /* ---------- Stack chips ---------- */
   function renderStack() {
-    const el = document.getElementById('stack');
+    const el = document.getElementById('stack-chips');
     if (!el) return;
-    el.innerHTML = window.RX_STACK.map(s => `<span class="chip">${s}</span>`).join('');
+    el.innerHTML = window.RX_STACK.map(s => '<span class="chip">' + s + '</span>').join('');
   }
 
-  /* ---------- Burger menu ---------- */
+  /* ---------- Burger ---------- */
   function menu() {
     const btn = document.getElementById('burger');
     const links = document.getElementById('nav-links');
@@ -120,7 +122,7 @@
     btn.addEventListener('click', () => links.classList.toggle('open'));
   }
 
-  /* ---------- Fill brand text ---------- */
+  /* ---------- Brand text ---------- */
   function brand() {
     document.querySelectorAll('[data-brand]').forEach(n => n.textContent = name);
     document.querySelectorAll('[data-tagline]').forEach(n => n.textContent = tagline);

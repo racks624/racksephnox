@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://racksephnox.riqelsspiraltech.us.ci/sitemap.xml

@@ -1,6 +1,7 @@
 /* ============================================================
-   RACKSEPHNOX — Framework Data
+   RACKSEPHNOX — Framework Data (Industrial Grade)
    Source: Racksephnox Framework Documentation (Technical Reference)
+   Every framework carries a `demo` id consumed by modules.js
    ============================================================ */
 
 window.RX_META = {
@@ -9,8 +10,10 @@ window.RX_META = {
   sig: "Infinite Spiral of Creation | 888 Hz | Golden Ratio Phi",
   paybill: "200999",
   account: "0333060036213",
+  cname: "racksephnox.riqelsspiraltech.us.ci",
+  version: "1.0.0-industrial",
   stats: [
-    { num: "15+",  lbl: "Frameworks" },
+    { num: "20",   lbl: "Frameworks" },
     { num: "60+",  lbl: "Database Tables" },
     { num: "40+",  lbl: "Controllers" },
     { num: "30+",  lbl: "Service Classes" },
@@ -22,11 +25,11 @@ window.RX_META = {
 };
 
 window.RX_PRINCIPLES = [
-  { ico: "🆔", t: "Unified Identity",   d: "One account for every module — crypto, banking, gaming, loans, referrals." },
-  { ico: "🔍", t: "Transparent Ops",    d: "Full audit trail on every action, credit, and state change." },
-  { ico: "📱", t: "Mobile-First",       d: "Designed for emerging markets, Paybill 200999 deposits, low-bandwidth friendly." },
+  { ico: "🆔", t: "Unified Identity",     d: "One account for every module — crypto, banking, gaming, loans, referrals." },
+  { ico: "🔍", t: "Transparent Ops",      d: "Full audit trail on every action, credit, and state change." },
+  { ico: "📱", t: "Mobile-First",         d: "Designed for emerging markets, Paybill 200999 deposits, low-bandwidth friendly." },
   { ico: "🧩", t: "Modular Architecture", d: "Each framework independent — swap, scale, or disable without cascade failure." },
-  { ico: "✨", t: "Golden Theme",       d: "Gold, black, ivory palette. Phi, lambda, and 888 Hz woven through the math." }
+  { ico: "✨", t: "Golden Theme",         d: "Gold, black, ivory palette. Phi, lambda, and 888 Hz woven through the math." }
 ];
 
 window.RX_STACK = [
@@ -35,9 +38,6 @@ window.RX_STACK = [
   "Cloudflare Tunnel","GitHub Actions","Docker Multi-Stage","Redis","SMTP"
 ];
 
-/* ------------------------------------------------------------
-   The 20 Frameworks
-   ------------------------------------------------------------ */
 window.RX_FRAMEWORKS = [
 
 /* 1 ---------------------------------------------------------- */
@@ -48,6 +48,7 @@ window.RX_FRAMEWORKS = [
   title: "Platform Overview",
   sub: "A unified digital wealth platform",
   brief: "Crypto, investment, gaming, loans, and referrals under one authenticated experience.",
+  demo: "overview-stats",
   html: `
     <p>Racksephnox is a unified digital wealth platform combining cryptocurrency trading, investment products, gaming, loans, and referral systems into a single authenticated experience. Built on <strong>Laravel 13</strong> with a <strong>mobile-first</strong> philosophy and deployed globally via <strong>Cloudflare Tunnel</strong>.</p>
 
@@ -84,6 +85,7 @@ window.RX_FRAMEWORKS = [
   title: "Technology Stack",
   sub: "The engine room",
   brief: "PHP 8.4, Laravel 13, Alpine, Tailwind, Docker, Cloudflare Tunnel.",
+  demo: null,
   html: `
     <p>Every layer of the platform — from database driver to deployment pipeline — is pinned below.</p>
 
@@ -117,6 +119,7 @@ window.RX_FRAMEWORKS = [
   title: "Authentication Framework",
   sub: "Registration, login, session, access control",
   brief: "Laravel Breeze with custom admin detection and rate limiting.",
+  demo: "auth-simulator",
   html: `
     <p>Handles user registration, login, session management, and access control. Built on <strong>Laravel Breeze</strong> with custom enhancements for admin detection.</p>
 
@@ -178,6 +181,7 @@ window.RX_FRAMEWORKS = [
   title: "Dashboard Framework",
   sub: "Central hub after login",
   brief: "Aggregates wealth, banking, investments, loans, referrals and gaming into one overview.",
+  demo: "dashboard-preview",
   html: `
     <p>Central hub after login. Aggregates data from every subsystem into a unified overview: wealth, banking, investments, loans, referrals, gaming.</p>
 
@@ -215,6 +219,7 @@ window.RX_FRAMEWORKS = [
   title: "Banking Center",
   sub: "Deposits & Withdrawals",
   brief: "All money in and out. Paybill 200999 in, mobile/bank out.",
+  demo: "banking-flow",
   html: `
     <p>Handles all money movement in and out of the platform. Users deposit via <strong>M-Pesa Paybill 200999</strong> and withdraw to their mobile or bank account.</p>
 
@@ -273,6 +278,7 @@ window.RX_FRAMEWORKS = [
   title: "M-Pesa Integration & Verification",
   sub: "Manual + automated statement matching",
   brief: "Two-mode verification with confidence scoring and strict guardrails.",
+  demo: "mpesa-validator",
   html: `
     <h2>Paybill Details</h2>
     <table>
@@ -330,6 +336,7 @@ window.RX_FRAMEWORKS = [
   title: "Cryptocurrency Trading Framework",
   sub: "Real-time candlesticks, order book, buy/sell engine",
   brief: "Full trading console — BTCUSDT live, architecture ready for ETH, BNB.",
+  demo: "crypto-ticker",
   html: `
     <p>Full-featured crypto trading console with real-time candlestick charts, order book, buy/sell engine, and portfolio management. Currently supports <strong>BTCUSDT</strong> with architecture ready for ETH, BNB, and others.</p>
 
@@ -391,6 +398,7 @@ window.RX_FRAMEWORKS = [
   title: "Forex Trading Framework",
   sub: "Traditional pairs on the same engine",
   brief: "EUR/USD, GBP/USD, USD/JPY, USD/KES — shared order book & charts.",
+  demo: "forex-converter",
   html: `
     <p>Extension of the crypto trading engine for traditional forex pairs. Shares the same order book, engine, and chart architecture, with forex-specific configurations.</p>
 
@@ -427,6 +435,7 @@ window.RX_FRAMEWORKS = [
   title: "Investment Plans Framework",
   sub: "Lock KES, earn daily interest",
   brief: "Four default plans from Starter to Divine with automatic 24h accrual.",
+  demo: "investment-roi",
   html: `
     <p>Traditional investment plans where users lock KES for a duration and earn daily interest. Interest is credited automatically every <strong>24 hours</strong>.</p>
 
@@ -479,6 +488,7 @@ window.RX_FRAMEWORKS = [
   title: "RX Machine Series",
   sub: "7 tiers × 3 VIP levels",
   brief: "RX0 Origin → RX6 Infinity. Golden-ratio VIP multipliers.",
+  demo: "machine-calculator",
   html: `
     <p>Premium investment product with <strong>7 tiers</strong> (RX0 through RX6) and <strong>3 VIP levels</strong> per tier. Higher tiers offer higher returns and higher minimums.</p>
 
@@ -539,6 +549,7 @@ window.RX_FRAMEWORKS = [
   title: "BTC Investment Machines",
   sub: "Bitcoin-backed returns",
   brief: "Tracks BTC price appreciation, auto-compound optional, 14-day cycle.",
+  demo: "btc-appreciation",
   html: `
     <p>Bitcoin-specific investment machines that track BTC price appreciation and combine with trading profits. Shares the Machine architecture but uses BTC-based returns instead of fixed percentages.</p>
 
@@ -568,6 +579,7 @@ window.RX_FRAMEWORKS = [
   title: "Lottery & Casino Framework",
   sub: "Provably-fair gaming ecosystem",
   brief: "18 tables, 4-tier jackpots, achievements, missions, tournaments, guilds.",
+  demo: "lottery-jackpot",
   html: `
     <p>Full gaming ecosystem with provably-fair spins, progressive jackpots, achievements, missions, streaks, tournaments, and guilds. Designed for engagement and retention.</p>
 
@@ -647,6 +659,7 @@ window.RX_FRAMEWORKS = [
   title: "Loans Services Framework",
   sub: "Credit scoring & amortization",
   brief: "Four products from Divine Micro to Infinity Mortgage. Score range 300–850.",
+  demo: "loans-credit",
   html: `
     <p>Lending platform with credit scoring, tiered products, amortization scheduling, and default detection. Users build credit through on-time repayment.</p>
 
@@ -705,6 +718,7 @@ window.RX_FRAMEWORKS = [
   title: "Referral System",
   sub: "5% of referee's first investment",
   brief: "Unique code per user, share link, wallet credit on conversion.",
+  demo: "referral-link",
   html: `
     <p>The growth engine — users earn bonuses for inviting others.</p>
 
@@ -734,6 +748,7 @@ window.RX_FRAMEWORKS = [
   title: "Notifications Framework",
   sub: "In-app · Email · SMS",
   brief: "Event-driven notifications with per-channel opt-out preferences.",
+  demo: "notifications-preview",
   html: `
     <p>Keeps users informed about transactions, wins, loans, and events via in-app, email, and SMS channels.</p>
 
@@ -773,6 +788,7 @@ window.RX_FRAMEWORKS = [
   title: "KYC & Verification",
   sub: "4 progressive verification tiers",
   brief: "Basic → Standard → Enhanced → VIP. Higher tiers unlock larger limits.",
+  demo: "kyc-tiers",
   html: `
     <p>Know Your Customer — required for regulatory compliance and to prevent fraud. Users submit identity documents for verification.</p>
 
@@ -816,6 +832,7 @@ window.RX_FRAMEWORKS = [
   title: "User Profile & Settings",
   sub: "Account, security, preferences",
   brief: "Personal info, password, 2FA, notifications, bank accounts, sessions.",
+  demo: null,
   html: `
     <p>Central page for user account management — personal info, password, notification preferences, bank accounts, and security settings.</p>
 
@@ -847,6 +864,7 @@ window.RX_FRAMEWORKS = [
   title: "Admin Console",
   sub: "Nine department back-ends",
   brief: "Deposits, withdrawals, KYC, investments, machines, trading, lottery, loans, reports.",
+  demo: null,
   html: `
     <p>Back-office for managing every aspect of the platform. Nine department admins each have dedicated sections tailored to their responsibilities.</p>
 
@@ -883,6 +901,7 @@ window.RX_FRAMEWORKS = [
   title: "Deployment & CI/CD",
   sub: "GitHub Actions · Docker · Cloudflare Tunnel",
   brief: "Multi-arch images to GHCR, Alpine runtime, named tunnel with WAF.",
+  demo: "deploy-pipeline",
   html: `
     <h2>CI/CD Pipeline</h2>
     <ul>
@@ -922,6 +941,7 @@ window.RX_FRAMEWORKS = [
   title: "Security Architecture",
   sub: "Defense in depth",
   brief: "App, API, data, financial, infrastructure — every layer hardened.",
+  demo: "security-layers",
   html: `
     <h2>Application Security</h2>
     <ul>

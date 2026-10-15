@@ -1,0 +1,19 @@
+{
+  "name": "Racksephnox — Framework Documentation",
+  "short_name": "Racksephnox",
+  "description": "Unified digital wealth platform — 20 frameworks, 17 live demos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d4af37",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='240' fill='%23d4af37'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle' font-family='serif' font-weight='bold' fill='%230a0a0a'%3ER%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
