@@ -25,7 +25,7 @@ RUN composer install \
 # ─────────────────────────────────────────────────────────────
 # STAGE 2 — Frontend asset builder (Node 20)
 # ─────────────────────────────────────────────────────────────
-FROM node:20-alpine AS frontend
+FROM node:25-alpine AS frontend
 
 WORKDIR /app
 
