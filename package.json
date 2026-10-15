@@ -14,7 +14,7 @@
         "alpinejs": "^3.14.1",
         "chart.js": "^4.4.2",
         "chartjs-plugin-zoom": "^2.0.1",
-        "klinecharts": "^10.0.3",
+        "klinecharts": "^10.0.4",
         "laravel-echo": "^1.16.0",
         "pusher-js": "^8.4.0-rc2",
         "swiper": "^11.1.4"
